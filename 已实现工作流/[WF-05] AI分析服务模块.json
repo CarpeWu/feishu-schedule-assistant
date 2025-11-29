@@ -1,0 +1,559 @@
+{
+  "name": "[WF-05] AI分析服务模块",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1360,
+        -272
+      ],
+      "id": "c829f5a5-eb4f-4519-a7e5-4042cfbf0f40",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblConfigxxxxxxx",
+        "body": "={\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"category\",\n        \"operator\": \"is\",\n        \"value\": [\n          \"AI\"\n        ]\n      }\n    ]\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        -272,
+        -528
+      ],
+      "id": "8f2ee33b-0e9e-481e-bcb6-18dca5ba516f",
+      "name": "获取AI分析配置",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 获取当前日期。由于触发器已设置为Asia/Shanghai时区，此代码将在上海时间的早上9点左右执行。\nconst now = new Date();\n\n// 获取今天是周几 (0=周日, 1=周一, ..., 6=周六)\nconst dayOfWeek = now.getDay();\n// 获取今天是几号 (1-31)\nconst dayOfMonth = now.getDate();\n\nlet runType = 'none'; // 默认为不执行\nlet shouldRun = false;\n\n// 优先判断是否为月总结日\n// 如果今天是1号，那么就需要执行上个月的月度总结\nif (dayOfMonth === 1) {\n  runType = 'monthly';\n  shouldRun = true;\n} \n// 如果不是1号，再判断是否为周总结日\n// 如果今天是周一 (dayOfWeek === 1)，那么就需要执行上一周的周度总结\nelse if (dayOfWeek === 1) { \n  runType = 'weekly';\n  shouldRun = true;\n}\n  // runType = 'weekly';\n  // shouldRun = true;\n\n// 返回一个结构清晰的对象，供后续节点使用\nreturn {\n  shouldRun: shouldRun,\n  runType: runType\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1136,
+        -272
+      ],
+      "id": "9b739c18-dbe0-40c1-b4d6-1a94a72b5740",
+      "name": "判断执行类型"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a12063af-e90e-4bce-97b5-6776fc43f164",
+              "leftValue": "={{ $('判断执行类型').item.json.shouldRun }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -912,
+        -272
+      ],
+      "id": "377e04de-911b-4c99-8c6e-b1b5f408a34f",
+      "name": "今天需要执行总结吗?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "19589841-b4d8-4e29-9ae7-23d975758e24",
+              "leftValue": "={{ $('判断执行类型').item.json.runType }}",
+              "rightValue": "monthly",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -688,
+        -288
+      ],
+      "id": "7b298ab8-c354-4fe8-912b-d29b27215cf7",
+      "name": "是月总结还是周总结?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- [ 动态日报格式化引擎 v3.0 - 上下文增强版 ] ---\n\n// 1. 获取必要的输入数据\n// 这里的引用路径非常关键，请确保节点名称完全一致\nconst reports = $('获取多周日报数据').first().json.data.items;\nconst dateConfig = $('计算日期范围').first().json;\nconst boundaryTime = dateConfig.boundary_time; // 分界线：大于此值为上周，小于此值为前几周\n\nif (!reports || reports.length === 0) {\n  return [];\n}\n\n// 2. 定义字段映射 (保持不变)\nconst fieldMap = {\n  work_content: \"工作内容\",\n  next_plan: \"下阶段规划\",\n  workload_feeling: \"工作量感受\",\n  need_assistance: \"是否需要协助\",\n  assistance_detail: \"需要协助详情\",\n  makeup_explanation: \"补交/漏写说明\"\n};\n\n// 3. 通用格式化函数 (保持不变)\nconst formatValue = (fieldId, value) => {\n  if (value === null || value === undefined) return \"无\";\n  if (Array.isArray(value) && value[0] && typeof value[0] === 'object' && 'text' in value[0]) {\n    return value.map(item => item.text || '').join('\\n').trim() || \"无\";\n  }\n  if (typeof value === 'boolean') return value ? \"是\" : \"否\";\n  return String(value).trim() || \"无\";\n};\n\n// 4. 按员工ID分组，并按时间排序\nconst reportsByEmployee = new Map();\n\n// 先分组\nfor (const report of reports) {\n  const fields = report.fields;\n  if (!fields.employee_person || !fields.employee_person[0]) continue;\n  \n  const employeeId = fields.employee_person[0].id;\n  const employeeName = fields.employee_person[0].name;\n  \n  if (!reportsByEmployee.has(employeeId)) {\n    reportsByEmployee.set(employeeId, {\n      employeeId: employeeId,\n      employeeName: employeeName,\n      rawReports: [] \n    });\n  }\n  \n  // 将原始记录存入，稍后统一排序和格式化\n  reportsByEmployee.get(employeeId).rawReports.push({\n    date: fields.report_date,\n    fields: fields\n  });\n}\n\n// 5. 生成最终文本\nconst finalOutput = Array.from(reportsByEmployee.values()).map(employee => {\n  \n  // 对该员工的日报按时间正序排列 (旧 -> 新)\n  // 这样 AI 阅读时能感受到时间线的发展\n  employee.rawReports.sort((a, b) => a.date - b.date);\n\n  // 构建日报文本块\n  const reportBlocks = employee.rawReports.map(item => {\n    const reportDate = new Date(item.date).toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' });\n    const fields = item.fields;\n    \n    // **核心逻辑**: 判断是“上周”还是“前几周”\n    // 注意: item.date 是毫秒时间戳，直接比较即可\n    const isLastWeek = item.date >= boundaryTime;\n    const timeLabel = isLastWeek ? `【上周】(${reportDate})` : `【前几周背景】(${reportDate})`;\n    \n    let contentParts = [`=== ${timeLabel} ===`];\n\n    for (const fieldId in fieldMap) {\n      if (fieldId in fields) {\n        const val = formatValue(fieldId, fields[fieldId]);\n        if (val !== \"无\" && val !== \"\") {\n          contentParts.push(`${fieldMap[fieldId]}:\\n${val}`);\n        }\n      }\n    }\n    return contentParts.join('\\n\\n');\n  });\n\n  // 6. 组装给 AI 的最终 Prompt\n  // 这里的提示词引导非常重要，告诉 AI 以前几周作为对比背景\n  const formattedText = \n    `这是 ${employee.employeeName} 过去三周的日报数据。数据按时间顺序排列。\\n\\n` +\n    `请注意区分：\\n` +\n    `1. 标记为 **【上周】** 的内容：这是你本次总结的**核心对象**。\\n` +\n    `2. 标记为 **【前几周背景】** 的内容：仅作为**参考背景**，用于分析任务的连贯性、长期阻塞或进度变化，不要单独为它们写总结。\\n\\n` +\n    `--------------------------------------------------\\n` +\n    reportBlocks.join('\\n\\n--------------------------------------------------\\n');\n\n  return {\n    employeeId: employee.employeeId,\n    employeeName: employee.employeeName,\n    weeklyReportsText: formattedText\n  };\n});\n\nreturn finalOutput;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        -176
+      ],
+      "id": "13914d0e-3c0e-4275-8bea-f6e1b08666dd",
+      "name": "按员工分组并格式化日报"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.weeklyReportsText }}",
+        "options": {
+          "systemMessage": "**角色设定:**\n你是一位拥有上帝视角的**首席技术官 (CTO) 兼 团队效能分析专家**。你极其擅长处理长周期的工作汇报数据，能够穿透琐碎的日常记录，捕捉员工的工作脉络。你不仅关注“做了什么”，更关注工作流的**逻辑闭环**和**执行连贯性**。\n\n**任务目标:**\n我将提供一名员工的**【历史背景】**（前两周数据）和**【本周汇报】**（核心分析对象）。请你结合历史背景，对本周的工作进行深度复盘。\n\n**输入数据说明:**\n数据源为**“双日报”**（通常每两天提交一次）。\n*注意：在双日报模式下，员工容易受“近因效应”影响（即周四写日报时，详细描述周四的工作，而简略或遗漏周三已完成的工作）。*\n\n**分析核心逻辑 (CRITICAL):**\n\n**第一部分：本周工作审计与汇总 (对应输出 `summary`)**\n此部分需**严谨但具备容错性**。请遵循以下审计原则：\n\n1.  **智能闭环检查 (Smart Continuity):**\n    *   **拒绝机械匹配:** 不要因为“周一规划了A”但“周三日报没提A”就立即判为中断。A可能在周二已完成但被员工略过。\n    *   **寻找“消失的任务”:** 只有当一个**重要任务**在规划中出现，且在**本周后续的所有汇报中彻底消失**（既无进展也无结果），才标记为“连续性中断/丢失”。\n    *   **关注主线:** 重点关注项目的推进脉络，而非琐碎任务的流水账。\n\n2.  **记录质量审计 (Integrity & Clarity):**\n    *   识别工作记录的**颗粒度**。是“修复Bug”这种模糊描述，还是“修复了导致支付失败的并发锁Bug”这种清晰描述？\n    *   识别**“隐形工作”**：汇报中是否突然冒出未曾规划、但占用大量时间的高价值成果？这通常意味着计划外的救火或灵感爆发。\n\n3.  **结构化成果汇总:**\n    *   基于上述审计，将本周**实际产出**的高价值工作按**项目/模块**归纳。\n    *   **必须**显性指出本周的**“执行契合度”**（即：实际产出与周初计划的重合度）。\n\n**第二部分：专家自由洞察 (对应输出 `insights`)**\n此部分请**完全自由发挥**，进行降维打击式的分析。\n*利用【历史背景】数据，寻找时间维度上的模式：*\n*   **趋势研判:** 对比前几周，该员工本周的状态是在爬坡（产出增加/质量提升）、瓶颈期（一直在解决同一个老问题）还是懈怠期？\n*   **风险嗅探:** 是否有某个任务从前几周一直拖到现在？是否有某种“技术债务”正在堆积（如反复提到的临时修复）？\n*   **一针见血的建议:** 给他一句他最需要听的“大实话”（鼓励、鞭策或方向指引）。\n\n**输出格式:**\n你的回复**必须**是一个语法正确的JSON对象，严禁包含Markdown代码块标记（如 ```json），直接以 `{` 开头。\n\nJSON对象**必须**包含以下两个键：\n\n*   **`summary` (字符串):**\n    *   **内容:** 本周工作审计与汇总。\n    *   **格式要求:** 使用 `\\n` 换行。\n    *   **结构模板:**\n        `**[执行质量审计]**`\n        `- **执行契合度:** (高/中/低 - 简述理由)`\n        `- **闭环情况:** (指出是否有彻底消失的任务，若无则表扬)`\n        `- **记录清晰度:** (评价描述的质量)`\n        `\\n`\n        `**[本周核心成果]**`\n        `- **项目模块A:** ...`\n        `- **项目模块B:** ...`\n\n*   **`insights` (字符串):**\n    *   **内容:** 专家的自由深度洞察。\n    *   **格式要求:** 使用 `\\n` 换行。不设固定子标题，根据分析内容自由组织段落。请**加粗**关键洞察（如 **趋势:** ...）。\n\n**输入数据:**\n{{ $json.weeklyReportsText }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        192,
+        -176
+      ],
+      "id": "20131909-d169-4b42-9c62-ac22c5032fc7",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "deepseek/deepseek-chat-v3.1",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        176,
+        64
+      ],
+      "id": "49bc14ee-7c13-49c6-af77-bb25615f8a5c",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "raUxQJwz6WJymv4p",
+          "name": "YLHP's OpenRouter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// 1. 获取上游节点传来的、包含AI输出字符串的 item\nconst inputItem = $input.item.json;\n\n// 2. 获取与之配对的、更上游的、包含员工信息的 item\n// 【注意】这里我们依然可以安全地使用 .item.json，因为配对链条到此为止是完好的\nconst employeeInfo = $('按员工分组并格式化日报').item.json;\n\n// 3. 解析AI输出的JSON字符串\nconst analysisResult = JSON.parse(inputItem.output);\n\n// 4. 【核心改动】将员工信息和AI分析结果，打包成一个新的、更完整的数据对象\nconst finalOutput = {\n  employeeId: employeeInfo.employeeId,\n  employeeName: employeeInfo.employeeName,\n  analysis: analysisResult // 将解析出的 { summary, insights } 对象整体放入\n};\n\n// 5. 将这个打包好的完整对象返回\nreturn finalOutput;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        544,
+        -176
+      ],
+      "id": "6436140c-e99d-4a90-86ee-5e6b43259fbe",
+      "name": "解析AI分析结果"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. 【简化】现在只需要一个数据源，因为它已包含所有信息\nconst allAnalysisData = $('解析AI分析结果').all();\nconst executionInfo = $('判断执行类型').first().json;\n\n// 2. 计算分析周期的开始和结束日期 (此部分不变)\nconst today = new Date();\nlet startDate, endDate;\n\nif (executionInfo.runType === 'weekly') {\n  const dayOfWeek = today.getDay();\n  const daysToLastSunday = dayOfWeek === 0 ? 0 : dayOfWeek;\n  endDate = new Date(today.getTime());\n  endDate.setDate(today.getDate() - daysToLastSunday);\n  startDate = new Date(endDate.getTime());\n  startDate.setDate(endDate.getDate() - 6);\n} else { // 'monthly'\n  endDate = new Date(today.getFullYear(), today.getMonth(), 0);\n  startDate = new Date(endDate.getFullYear(), endDate.getMonth(), 1);\n}\n\nconst period_start_date = startDate.setHours(0, 0, 0, 0);\nconst period_end_date = endDate.setHours(23, 59, 59, 999);\n\n// 3. 【适配新数据】遍历数据，组装成飞书API要求的格式\nconst records = allAnalysisData.map(item => {\n  const currentData = item.json; // 每个item已包含所有需要的信息\n  \n  return {\n    \"fields\": {\n      \"analysis_type\": \"个人\",\n      \"target_id\": currentData.employeeId,\n      \"target_person\": [{ \"id\": currentData.employeeId }],\n      \"period_start_date\": period_start_date,\n      \"period_end_date\": period_end_date,\n      // **【适配新数据】** 路径已更新\n      \"summary\": currentData.analysis.summary, \n      \"insights\": currentData.analysis.insights\n    }\n  };\n});\n\n// 4. 将组装好的对象，转换为JSON字符串 (此部分不变)\nconst bodyObject = { records: records };\nconst finalPayloadString = JSON.stringify(bodyObject);\n\n// 5. 遵守n8n规则：返回一个数组，数组里包含一个带有我们成果的对象 (此部分不变)\nreturn [{\n  finalPayload: finalPayloadString\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        -272
+      ],
+      "id": "63ee269c-aa0f-4357-a2a3-a46c5cc494a5",
+      "name": "准备写入数据",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:batchAdd",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblAIAnalysisxxx",
+        "body": "={{ $json.finalPayload }}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        992,
+        -272
+      ],
+      "id": "da41d36f-daa8-4469-8f5e-43cd75164797",
+      "name": "写入T3分析汇总表",
+      "executeOnce": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblConfigxxxxxxx",
+        "body": "{\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"parameter_name\",\n        \"operator\": \"is\",\n        \"value\": [\n          \"ADMIN_OPEN_IDS\"\n        ]\n      }\n    ]\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        -272
+      ],
+      "id": "e393322c-7cec-4cb4-aa49-91eaa693525e",
+      "name": "查询管理员名单",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. 获取管理员名单 (来自当前节点的输入)\n// 我们假设输入中只有一条包含管理员列表的记录\nconst adminConfig = $input.first().json;\n\n// 安全检查：如果没找到管理员配置，直接返回空\nif (!adminConfig.data || !adminConfig.data.items || adminConfig.data.items.length === 0) {\n  return [];\n}\n\n// 解析管理员Open ID，假设以逗号分隔 (e.g., \"ou_123,ou_456\")\nconst adminOpenIdsString = adminConfig.data.items[0].fields.parameter_value[0].text;\nconst adminOpenIds = adminOpenIdsString.split(',').map(id => id.trim());\n\n// 2. 获取所有员工的分析结果 (来自上游节点 '解析AI分析结果')\n// 使用 $('节点名').all() 跨节点获取数据\nconst allAnalyses = $('解析AI分析结果').all().map(item => item.json);\n\nconst tasks = [];\n\n// 3. 双重循环：遍历每一位管理员 × 遍历每一份分析报告\nfor (const adminId of adminOpenIds) {\n  for (const analysisData of allAnalyses) {\n    \n    // 提取核心数据\n    const employeeName = analysisData.employeeName;\n    const summaryText = analysisData.analysis.summary;\n    const insightsText = analysisData.analysis.insights;\n    \n    // 4. 构建飞书卡片 (参考员工通知卡片，但调整标题)\n    const messageCard = {\n      \"config\": { \"wide_screen_mode\": true },\n      \"header\": {\n        \"title\": { \n          // 标题增加【管理员抄送】标识\n          \"content\": `📢 [管理员抄送] ${employeeName} 的周报分析`, \n          \"tag\": \"plain_text\" \n        },\n        \"template\": \"turquoise\" // 使用青色以示区别 (员工端是蓝色/绿色)\n      },\n      \"elements\": [\n        {\n          \"tag\": \"div\",\n          \"text\": { \n            \"content\": `以下是 **${employeeName}** 的上周工作总结与AI深度洞察：`, \n            \"tag\": \"lark_md\" \n          }\n        },\n        { \"tag\": \"hr\" },\n        // Summary 部分\n        {\n          \"tag\": \"div\",\n          \"text\": { \"content\": summaryText, \"tag\": \"lark_md\" }\n        },\n        { \"tag\": \"hr\" },\n        // Insights 部分\n        {\n          \"tag\": \"div\",\n          \"text\": { \"content\": insightsText, \"tag\": \"lark_md\" }\n        },\n        { \"tag\": \"hr\" },\n        {\n          \"tag\": \"note\",\n          \"elements\": [\n            { \"tag\": \"plain_text\", \"content\": \"系统自动分发至管理员\" }\n          ]\n        }\n      ]\n    };\n\n    // 5. 将任务推入列表\n    tasks.push({\n      json: {\n        receiver_open_id: adminId,\n        message_body: messageCard,\n        target_employee: employeeName // 仅用于调试查看\n      }\n    });\n  }\n}\n\nreturn tasks;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        -272
+      ],
+      "id": "6af7abea-0983-4251-9478-b9fe7998a67d",
+      "name": "准备管理员通知卡片"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "message:send",
+        "receive_id": "={{ $json.receiver_open_id }}",
+        "msg_type": "interactive",
+        "content": "={{ JSON.stringify($json.message_body) }}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1696,
+        -272
+      ],
+      "id": "0b1a2d70-f6b0-4966-8fd7-466a8f10a84d",
+      "name": "向管理员发送通知",
+      "retryOnFail": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// 1. 直接从输入中获取所有需要的信息，因为节点8的输出已包含所有数据\nconst currentData = $input.item.json;\n\n// 2. 提取卡片所需的核心信息\nconst employeeName = currentData.employeeName;\nconst employeeId = currentData.employeeId;\nconst summaryText = currentData.analysis.summary;\nconst insightsText = currentData.analysis.insights;\n\n// 3. 构建飞书消息卡片的JSON结构\nconst messageCard = {\n  \"config\": { \"wide_screen_mode\": true },\n  \"header\": {\n    \"title\": { \"content\": `👋 Hi, ${employeeName}！你的AI周报总结已生成`, \"tag\": \"plain_text\" },\n    \"template\": \"blue\" // 蓝色代表信息与洞察\n  },\n  \"elements\": [\n    {\n      \"tag\": \"div\",\n      \"text\": { \"content\": \"这是AI为你生成的上周工作总结与深度洞察，希望能帮助你更好地复盘与规划。继续加油！\", \"tag\": \"lark_md\" }\n    },\n    { \"tag\": \"hr\" },\n    // 动态展示AI生成的Summary\n    {\n      \"tag\": \"div\",\n      \"text\": { \"content\": summaryText, \"tag\": \"lark_md\" }\n    },\n    { \"tag\": \"hr\" },\n    // 动态展示AI生成的Insights\n    {\n      \"tag\": \"div\",\n      \"text\": { \"content\": insightsText, \"tag\": \"lark_md\" }\n    },\n    { \"tag\": \"hr\" },\n    // 【核心改动】根据您的要求，这里不再有任何按钮，只提供一个温馨的结尾\n    {\n      \"tag\": \"note\",\n      \"elements\": [\n        { \"tag\": \"plain_text\", \"content\": \"本消息由「智能双日报管理系统」自动生成\" }\n      ]\n    }\n  ]\n};\n\n// 4. 返回待发送的任务。n8n会自动为每个员工都生成这样一个任务。\nreturn {\n  receiver_open_id: employeeId,\n  message_body: messageCard\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "c310c67b-ca1e-420e-8949-9b25cc8ad70b",
+      "name": "准备员工通知卡片"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "message:send",
+        "receive_id": "={{ $json.receiver_open_id }}",
+        "msg_type": "interactive",
+        "content": "={{ JSON.stringify($json.message_body) }}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        0
+      ],
+      "id": "1caeefdb-426d-4c45-8a06-9e02bb667524",
+      "name": "向员工发送周报总结",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 获取当前时间 (假设触发时间是周一上午 09:00)\nconst now = new Date();\n\n// 1. 计算查询的【结束时间】: 上周日 23:59:59\n// 思路: 今天是周一，减去1天就是周日\nconst endOfLastWeek = new Date(now);\nendOfLastWeek.setDate(now.getDate() - 1);\nendOfLastWeek.setHours(23, 59, 59, 999);\n\n// 2. 计算【上周的开始时间】: 结束时间 - 6天\n// 这是区分 \"上周\" 和 \"前几周\" 的关键分界线\nconst startOfLastWeek = new Date(endOfLastWeek);\nstartOfLastWeek.setDate(endOfLastWeek.getDate() - 6);\nstartOfLastWeek.setHours(0, 0, 0, 0);\n\n// 3. 计算【查询的开始时间】: 上周开始时间 - 14天 (再往前推2周)\n// 总共覆盖: 上周 + 前周 + 前前周 = 3周\nconst startOfSearch = new Date(startOfLastWeek);\nstartOfSearch.setDate(startOfLastWeek.getDate() - 14);\n\n// 输出毫秒时间戳，供后续节点和飞书API使用\nreturn [{\n  json: {\n    // API 查询范围\n    search_start_time: startOfSearch.getTime(),\n    search_end_time: endOfLastWeek.getTime(),\n    \n    // 逻辑分界线 (大于此时间为\"上周\"，小于此时间为\"前几周\")\n    boundary_time: startOfLastWeek.getTime(),\n    \n    // 用于调试的可读时间\n    readable_start: startOfSearch.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),\n    readable_end: endOfLastWeek.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),\n    readable_boundary: startOfLastWeek.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        -176
+      ],
+      "id": "b7824d50-1ce6-40f9-89dd-895c0865a92c",
+      "name": "计算日期范围"
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblDailyReportxx",
+        "page_size": 99999999,
+        "body": "={\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"report_date\",\n        \"operator\": \"isGreater\",\n        \"value\": [\n          \"ExactDate\",\n          {{ $('计算日期范围').item.json.search_start_time - 1 }}\n        ]\n      },\n      {\n        \"field_name\": \"report_date\",\n        \"operator\": \"isLess\",\n        \"value\": [\n          \"ExactDate\",\n          {{ $('计算日期范围').item.json.search_end_time + 1 }}\n        ]\n      }\n    ]\n  },\n  \"field_names\": [\n    \"employee_person\",\n    \"report_date\",\n    \"work_content\",\n    \"next_plan\",\n    \"workload_feeling\",\n    \"need_assistance\",\n    \"assistance_detail\",\n    \"makeup_explanation\"\n  ],\n  \"automatic_fields\": false\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        -176
+      ],
+      "id": "50b6cad8-e0c6-4344-b476-b7fe3cd90af1",
+      "name": "获取多周日报数据",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "判断执行类型",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "判断执行类型": {
+      "main": [
+        [
+          {
+            "node": "今天需要执行总结吗?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "今天需要执行总结吗?": {
+      "main": [
+        [
+          {
+            "node": "是月总结还是周总结?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "是月总结还是周总结?": {
+      "main": [
+        [
+          {
+            "node": "获取AI分析配置",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "计算日期范围",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "按员工分组并格式化日报": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "解析AI分析结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "解析AI分析结果": {
+      "main": [
+        [
+          {
+            "node": "准备写入数据",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "准备员工通知卡片",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "准备写入数据": {
+      "main": [
+        [
+          {
+            "node": "写入T3分析汇总表",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "写入T3分析汇总表": {
+      "main": [
+        [
+          {
+            "node": "查询管理员名单",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询管理员名单": {
+      "main": [
+        [
+          {
+            "node": "准备管理员通知卡片",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "准备管理员通知卡片": {
+      "main": [
+        [
+          {
+            "node": "向管理员发送通知",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "准备员工通知卡片": {
+      "main": [
+        [
+          {
+            "node": "向员工发送周报总结",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "计算日期范围": {
+      "main": [
+        [
+          {
+            "node": "获取多周日报数据",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取多周日报数据": {
+      "main": [
+        [
+          {
+            "node": "按员工分组并格式化日报",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Shanghai",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "4325e632-7969-41af-a28a-1fc3f1536ba8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a34391d7e308dacdc22e6d02a503e04eb0f43b9d0934253b57ca7d984edb83ae"
+  },
+  "id": "WORKFLOW_ID_05_PLACEHOLDER",
+  "tags": []
+}

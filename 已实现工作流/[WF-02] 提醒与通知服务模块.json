@@ -1,0 +1,250 @@
+{
+  "name": "[WF-02] 提醒与通知服务模块",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 21
+            },
+            {
+              "triggerAtHour": 22
+            },
+            {
+              "triggerAtHour": 23
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        -96
+      ],
+      "id": "73105adc-bfa6-4877-852a-f14940279c5d",
+      "name": "Schedule Trigger",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblScheduleLogxx",
+        "body": "{\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"schedule_date\",\n        \"operator\": \"is\",\n        \"value\": [\"Today\"]\n      },\n      {\n        \"field_name\": \"status\",\n        \"operator\": \"is\",\n        \"value\": [\"应交\"]\n      }\n    ]\n  },\n  \"page_size\": 500\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        224,
+        -96
+      ],
+      "id": "c6336737-1066-4fb4-800c-827e2ad0e48d",
+      "name": "获取今日应交名单",
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblDailyReportxx",
+        "body": "{\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"report_date\",\n        \"operator\": \"is\",\n        \"value\": [\"Today\"]\n      }\n    ]\n  },\n  \"page_size\": 500\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        448,
+        -96
+      ],
+      "id": "2d07a6ab-75b1-4170-a605-31df28372c3e",
+      "name": "获取今日已交名单",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. 获取上游节点的数据\nconst shouldSubmitNodeOutput = $('获取今日应交名单').all();\nconst hasSubmittedNodeOutput = $('获取今日已交名单').all();\n\n// 2. 安全地提取记录列表\n// 核心知识点：数据深埋在 [0].json.data.items 路径下\nconst shouldSubmitList = shouldSubmitNodeOutput[0]?.json?.data?.items || [];\nconst hasSubmittedList = hasSubmittedNodeOutput[0]?.json?.data?.items || [];\n\n// 3. 创建一个已提交员工ID的集合，用于快速查找\n// 使用Set数据结构，比数组查询速度快很多\nconst submittedIds = new Set(\n  hasSubmittedList.map(item => item.fields.employee_person[0].id)\n);\n\n// 4. 筛选出应交但未交的员工\nconst unsubmittedList = shouldSubmitList.filter(item => {\n  const employeeId = item.fields.employee_person[0].id;\n  // 如果当前员工的ID不在“已提交”集合中，则保留\n  return !submittedIds.has(employeeId);\n});\n\n// 5. 返回最终的未提交名单\nreturn unsubmittedList;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        -96
+      ],
+      "id": "338a9f36-ef7a-4fb4-afa5-6499ae54b038",
+      "name": "筛选未提交员工",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a47fecec-e99a-4dfc-ae0b-e5063222408e",
+              "leftValue": "={{ $items.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        -96
+      ],
+      "id": "21628efb-96c1-4c44-aec1-5e2931193f78",
+      "name": "是否有人未提交?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- [ WF-02 员工提醒卡片构建引擎 v2.1 - 最终确认版 ] ---\n\n// 1. 获取所有待提醒的员工列表\nconst employeesToRemindRaw = $input.all();\nconst results = [];\n\n// 2. **智能防重**：确保每位员工只会被处理一次\nconst uniqueEmployees = new Map();\nfor (const item of employeesToRemindRaw) {\n  // **关键**：从 employee_person 字段获取ID\n  const employeeOpenId = item.json.fields.employee_person[0].id;\n  \n  if (employeeOpenId) { // 确保ID存在\n    // **关键**：在使用ID前，先用 .trim() 进行净化，移除所有不可见的空白和换行符\n    const cleanOpenId = employeeOpenId.trim(); \n    \n    if (!uniqueEmployees.has(cleanOpenId)) {\n      uniqueEmployees.set(cleanOpenId, item.json);\n    }\n  }\n}\n\n// 3. 遍历去重后的员工列表\nfor (const [employeeOpenId, employeeData] of uniqueEmployees.entries()) {\n\n  // 4. 提取所需信息\n  const employeeName = employeeData.fields.employee_person[0].name;\n  const formLink = \"https://your_tenant_subdomain.feishu.cn/share/base/form/FORM_SHARE_TOKEN_PLACEHOLDER_1?prefill_%E6%8F%90%E4%BA%A4%E7%B1%BB%E5%9E%8B=%E6%AD%A3%E5%B8%B8%E6%8F%90%E4%BA%A4&hide_%E6%8F%90%E4%BA%A4%E7%B1%BB%E5%9E%8B=1\";\n\n  // 5. 构建消息卡片\n  const messageCard = {\n    \"config\": { \"wide_screen_mode\": true },\n    \"header\": { \"title\": { \"content\": \"【今日日报提醒】\", \"tag\": \"plain_text\" }, \"template\": \"blue\" },\n    \"elements\": [\n      { \"tag\": \"div\", \"text\": { \"content\": `您好，**${employeeName}**。\\n温馨提醒，今天的日报还没有填写哦~`, \"tag\": \"lark_md\" } },\n      { \"tag\": \"action\", \"actions\": [ { \"tag\": \"button\", \"text\": { \"content\": \"✍️ 立即填写日报\", \"tag\": \"plain_text\" }, \"type\": \"primary\", \"url\": formLink } ] }\n    ]\n  };\n\n  // 6. 将结果存入待办列表\n  results.push({\n    json: {\n      receiver_open_id: employeeOpenId, // 这里使用的是已经净化过的 cleanOpenId\n      message_body: messageCard\n    }\n  });\n}\n\n// 7. 返回所有待发送的任务\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -96
+      ],
+      "id": "8bf35efc-6b89-41cf-beff-5e28ac5e3a15",
+      "name": "准备消息内容",
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "message:send",
+        "receive_id": "={{ $json.receiver_open_id }}",
+        "msg_type": "interactive",
+        "content": "={{ JSON.stringify($json.message_body) }}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        -96
+      ],
+      "id": "75ba580a-948d-4843-a090-e78e8b911127",
+      "name": "执行发送消息",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "获取今日应交名单",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取今日应交名单": {
+      "main": [
+        [
+          {
+            "node": "获取今日已交名单",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取今日已交名单": {
+      "main": [
+        [
+          {
+            "node": "筛选未提交员工",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "筛选未提交员工": {
+      "main": [
+        [
+          {
+            "node": "是否有人未提交?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "是否有人未提交?": {
+      "main": [
+        [
+          {
+            "node": "准备消息内容",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "准备消息内容": {
+      "main": [
+        [
+          {
+            "node": "执行发送消息",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Shanghai",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "e71a2c95-8144-405e-881e-4a5e19c836ae",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a34391d7e308dacdc22e6d02a503e04eb0f43b9d0934253b57ca7d984edb83ae"
+  },
+  "id": "WORKFLOW_ID_02_PLACEHOLDER",
+  "tags": []
+}

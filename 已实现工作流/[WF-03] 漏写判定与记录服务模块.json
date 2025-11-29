@@ -1,0 +1,366 @@
+{
+  "name": "[WF-03] 漏写判定与记录服务模块",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "34d000c9-0daa-4a4f-84fe-eb37281563df",
+      "name": "Schedule Trigger",
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblScheduleLogxx",
+        "body": "{\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"schedule_date\",\n        \"operator\": \"is\",\n        \"value\": [\n          \"Yesterday\"\n        ]\n      }\n    ]\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "5b7aaecc-47cd-434a-b530-4766745de299",
+      "name": "查询昨日应交名单",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblDailyReportxx",
+        "body": "{\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"report_date\",\n        \"operator\": \"is\",\n        \"value\": [\n          \"Yesterday\"\n        ]\n      }\n    ]\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "723fdbcd-262a-4546-9f84-7872f5528f26",
+      "name": "查询昨日提交记录",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 步骤 1: 引用并安全地提取上游数据\nconst scheduledNodeOutput = $('查询昨日应交名单').all();\nconst submittedNodeOutput = $('查询昨日提交记录').all();\nconst scheduledItems = scheduledNodeOutput[0]?.json?.data?.items || [];\nconst submittedItems = submittedNodeOutput[0]?.json?.data?.items || [];\n\n// 步骤 2: **优化** - 创建一个已提交员工的 \"快速查找集合\" (Set)\n// 我们使用 flatMap 来安全地处理数据\nconst submittedEmployeeRecordIds = new Set(\n  submittedItems.flatMap(item => {\n    // 在访问前，先检查数据是否存在且是一个数组\n    if (item.fields.employee_ref && Array.isArray(item.fields.employee_ref.link_record_ids)) {\n      // 如果存在，返回包含所有关联ID的数组\n      return item.fields.employee_ref.link_record_ids;\n    }\n    // 如果不存在或格式不对，返回一个空数组，flatMap会安全地忽略它\n    return [];\n  })\n);\n\n// 步骤 3: 筛选出漏写的员工 (此部分逻辑无需改变)\nconst missedEmployees = scheduledItems.filter(scheduledItem => {\n  if (scheduledItem.fields.employee_ref && Array.isArray(scheduledItem.fields.employee_ref.link_record_ids)) {\n      const scheduledEmployeeRecordId = scheduledItem.fields.employee_ref.link_record_ids[0];\n      return !submittedEmployeeRecordIds.has(scheduledEmployeeRecordId);\n  }\n  return false; // 如果排班记录本身有问题，则不认为是漏写\n});\n\n// 步骤 4: 格式化输出 (此部分逻辑无需改变)\nreturn missedEmployees.map(item => {\n  return {\n    json: {\n      employee_ref: item.fields.employee_ref.link_record_ids,\n      employee_person: item.fields.employee_person,\n      missed_date: item.fields.schedule_date\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "dc73ecb5-0121-4c85-8bbc-c55cb8079c96",
+      "name": "对比分析识别漏写员工"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ac0003df-2a77-43de-a06e-9355b7d0c3c1",
+              "leftValue": "={{ $items.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "1aa4e5e6-9981-4d73-9bd1-8bf3bea07b7d",
+      "name": "是否有漏写员工?"
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:batchAdd",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblMissedLogxxxx",
+        "body": "={{\n  JSON.stringify({\n    \"records\": $('是否有漏写员工?').all().map(item => ({\n      \"fields\": {\n        \"employee_ref\": item.json.employee_ref,\n        \"employee_person\": item.json.employee_person.map(p => ({\"id\": p.id})),\n        \"missed_date\": item.json.missed_date,\n        \"status\": \"漏写\"\n      }\n    }))\n  })\n}}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        -208
+      ],
+      "id": "c933da4f-ebaa-4996-afa6-f150de2a3e03",
+      "name": "创建漏写记录",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "executeOnce": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "message:send",
+        "receive_id": "={{ $json.receiver_open_id }}",
+        "msg_type": "interactive",
+        "content": "={{ JSON.stringify($json.message_body) }}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        -16
+      ],
+      "id": "a833b47e-9c25-4952-8739-04a8c8b4f82b",
+      "name": "向漏写员工发送通知",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// --- [ 漏写员工通知卡片构建引擎 v2.0 - 卡片升级版 ] ---\n\n// 1. 从上游安全地获取当前正在处理的这名员工的数据\nconst employeeData = $input.item.json;\n\n// 2. 准备所有需要的变量\nconst timestamp = employeeData.missed_date;\nconst missedDateFormatted = new Date(timestamp).toLocaleDateString('zh-CN', {\n    timeZone: 'Asia/Shanghai',\n    year: 'numeric',\n    month: '2-digit',\n    day: '2-digit'\n});\nconst employeeName = employeeData.employee_person[0].name;\nconst employeeOpenId = employeeData.employee_person[0].id;\n// 这是预设了“补交”类型的表单链接，非常巧妙\nconst submissionLink = \"https://your_tenant_subdomain.feishu.cn/share/base/form/FORM_SHARE_TOKEN_PLACEHOLDER_2?prefill_%E6%8F%90%E4%BA%A4%E7%B1%BB%E5%9E%8B=%E8%A1%A5%E4%BA%A4&hide_%E6%8F%90%E4%BA%A4%E7%B1%BB%E5%9E%8B=1\";\n\n// 3. 构建交互式消息卡片\nconst messageCard = {\n  \"config\": { \"wide_screen_mode\": true },\n  \"header\": {\n    \"title\": { \"content\": \"【日报漏写提醒】\", \"tag\": \"plain_text\" },\n    \"template\": \"orange\" // 使用橙色，表示提醒\n  },\n  \"elements\": [\n    { // 第一个模块：称呼和问题描述\n      \"tag\": \"div\",\n      \"text\": {\n        \"content\": `您好，**${employeeName}**。\\n系统发现您在 **${missedDateFormatted}** 的日报尚未提交。`,\n        \"tag\": \"lark_md\"\n      }\n    },\n    { // 第二个模块：操作指引\n      \"tag\": \"div\",\n      \"text\": {\n        \"content\": \"请尽快通过下方按钮补交或说明情况，感谢您的配合。\",\n        \"tag\": \"lark_md\"\n      }\n    },\n    { \"tag\": \"hr\" }, // 分割线\n    { // 第三个模块：行动按钮\n      \"tag\": \"action\",\n      \"actions\": [\n        {\n          \"tag\": \"button\",\n          \"text\": { \"content\": \"✍️ 立即补交或说明\", \"tag\": \"plain_text\" },\n          \"type\": \"primary\", // 蓝色主按钮\n          \"url\": submissionLink\n        }\n      ]\n    }\n  ]\n};\n\n// 4. 按n8n标准格式返回数据\nreturn {\n  json: {\n    receiver_open_id: employeeOpenId,\n    message_body: messageCard\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        -16
+      ],
+      "id": "c552a2bd-1ff8-40df-a6bf-9bbc78947726",
+      "name": "准备通知内容"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- [ 漏写汇总报告卡片构建引擎 v1.2 - 换行修正版 ] ---\n\n// 1. 获取所有必需的上游数据\nconst missedEmployees = $('是否有漏写员工?').all();\nconst adminConfigItems = $('查询管理员名单').all();\n\n// 2. 双重安全检查\nif (missedEmployees.length === 0) {\n  return [];\n}\nif (adminConfigItems.length === 0 || !adminConfigItems[0].json.data.items[0]) {\n  return [];\n}\n\n// 3. 获取管理员列表\nconst adminOpenIdsString = adminConfigItems[0].json.data.items[0].fields.parameter_value[0].text;\nconst adminOpenIds = adminOpenIdsString.split(',');\n\n// 4. 准备卡片内容\nconst yesterday = new Date();\nyesterday.setDate(yesterday.getDate() - 1);\nconst yesterdayFormatted = yesterday.toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' });\nconst headerTitle = `【日报漏写汇总】${yesterdayFormatted}`;\nconst tableLink = \"https://your_tenant_subdomain.feishu.cn/base/QXRxxxxxxxxxxxxxxxxxxxx?table=tblMissedLogxxxx\";\n\n// **核心修正**：使用 '\\n' (单个反斜杠) 来实现真正的换行\nconst nameListString = missedEmployees.map((item, index) => {\n  const employeeName = item.json.employee_person[0].name;\n  return `**${index + 1}.** ${employeeName}`;\n}).join('\\n');\n\n// 5. 组装成最终的飞书消息卡片JSON\nconst messageCard = {\n  \"config\": { \"wide_screen_mode\": true },\n  \"header\": {\n    \"title\": { \"content\": headerTitle, \"tag\": \"plain_text\" },\n    \"template\": \"red\"\n  },\n  \"elements\": [\n    {\n      \"tag\": \"div\",\n      \"text\": { \"content\": `系统发现共有 **${missedEmployees.length}** 人漏写日报，名单如下：`, \"tag\": \"lark_md\" }\n    },\n    {\n      \"tag\": \"div\",\n      \"text\": { \"content\": nameListString, \"tag\": \"lark_md\" }\n    },\n    { \"tag\": \"hr\" },\n    {\n      \"tag\": \"action\",\n      \"actions\": [\n        {\n          \"tag\": \"button\",\n          \"text\": { \"content\": \"前往处理漏写记录\", \"tag\": \"plain_text\" },\n          \"type\": \"primary\",\n          \"url\": tableLink\n        }\n      ]\n    }\n  ]\n};\n\n// 6. 返回一个标准的JavaScript对象\nreturn adminOpenIds.map(id => ({\n  json: {\n    receiver_open_id: id.trim(),\n    message_body: messageCard\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        -208
+      ],
+      "id": "9b5f1f30-a399-4462-92a5-ca897526e6e3",
+      "name": "准备管理员汇报内容",
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "message:send",
+        "receive_id": "={{ $json.receiver_open_id }}",
+        "msg_type": "interactive",
+        "content": "={{ JSON.stringify($json.message_body) }}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        -208
+      ],
+      "id": "b8229b6a-2309-44a7-bdfe-c097782a69fc",
+      "name": "向管理员发送汇报",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblConfigxxxxxxx",
+        "body": "={\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"parameter_name\",\n        \"operator\": \"is\",\n        \"value\": [\"ADMIN_OPEN_IDS\"]\n      }\n    ]\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        -208
+      ],
+      "id": "7a578b27-4432-4f62-b1f6-590871e7467e",
+      "name": "查询管理员名单",
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "查询昨日应交名单",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询昨日应交名单": {
+      "main": [
+        [
+          {
+            "node": "查询昨日提交记录",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询昨日提交记录": {
+      "main": [
+        [
+          {
+            "node": "对比分析识别漏写员工",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "对比分析识别漏写员工": {
+      "main": [
+        [
+          {
+            "node": "是否有漏写员工?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "是否有漏写员工?": {
+      "main": [
+        [
+          {
+            "node": "准备通知内容",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "创建漏写记录",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "创建漏写记录": {
+      "main": [
+        [
+          {
+            "node": "查询管理员名单",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "准备通知内容": {
+      "main": [
+        [
+          {
+            "node": "向漏写员工发送通知",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "准备管理员汇报内容": {
+      "main": [
+        [
+          {
+            "node": "向管理员发送汇报",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询管理员名单": {
+      "main": [
+        [
+          {
+            "node": "准备管理员汇报内容",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Shanghai",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "1c5aabf3-fac6-4db4-a9ce-093707cabb2c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a34391d7e308dacdc22e6d02a503e04eb0f43b9d0934253b57ca7d984edb83ae"
+  },
+  "id": "WORKFLOW_ID_03_PLACEHOLDER",
+  "tags": []
+}

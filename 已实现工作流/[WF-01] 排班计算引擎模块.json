@@ -1,0 +1,352 @@
+{
+  "name": "[WF-01] 排班计算引擎模块",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 20 * * 2,4,5,6"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5c0cd93c-d062-440e-9af6-1719eecef27e",
+      "name": "Schedule Trigger",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblConfigxxxxxxx",
+        "body": "{\n  \"page_size\": 500\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "2e14fb4f-7478-49af-a680-bfae09c271bb",
+      "name": "获取系统配置",
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblEmployeexxxxx",
+        "body": "{\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"status\",\n        \"operator\": \"is\",\n        \"value\": [\"在职\"]\n      }\n    ]\n  },\n  \"page_size\": 500\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "22131ed9-b119-4b44-97e1-26e8ebc3d4f4",
+      "name": "查询在职员工",
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblSpecialSchexx",
+        "body": "{\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"schedule_change_date\",\n        \"operator\": \"is\",\n        \"value\": [\"Today\"]\n      },\n      {\n        \"field_name\": \"approval_status\",\n        \"operator\": \"is\",\n        \"value\": [\"已批准\"]\n      }\n    ]\n  },\n  \"page_size\": 500\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        672,
+        0
+      ],
+      "id": "3a6ef4b0-20e4-44fd-adbf-5c020389d6c1",
+      "name": "查询当日特殊日程",
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * @description 智能排班逻辑计算引擎 v3.2 (双重验证版)\n * 修复记录: 显式增加对 approval_status 的检查，不再单纯依赖上游节点的过滤。\n */\n\n// --- 辅助函数：智能提取记录数组 ---\nfunction extractRecords(nodeName) {\n  try {\n    const inputItems = $(nodeName).all();\n    if (!inputItems || inputItems.length === 0) return [];\n    \n    const firstJson = inputItems[0].json;\n    // 情况 A: Raw API Response\n    if (inputItems.length === 1 && firstJson.data && Array.isArray(firstJson.data.items)) {\n      return firstJson.data.items;\n    }\n    // 情况 B: Standard Items\n    if (firstJson.fields) {\n      return inputItems.map(item => item.json);\n    }\n    return [];\n  } catch (error) {\n    return [];\n  }\n}\n\n// --- 1. 定义排班规则 ---\nconst singleDayOffSchedule = [2, 4, 6]; // 单休：周二、周四、周六\nconst twoDaysOffSchedule = [2, 4, 5];   // 双休：周二、周四、周五\n// 获取中国时区(UTC+8)的当前星期几，确保在服务器时区不准时也能工作\nconst now = new Date();\nconst chinaTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (3600000 * 8));\nconst todayDayOfWeek = chinaTime.getDay();\n\n// --- 2. 获取并解包数据 ---\nconst allEmployees = extractRecords('查询在职员工');\nconst specialSchedules = extractRecords('查询当日特殊日程');\n\n// --- 3. 构建豁免名单 (使用 Open ID + 状态验证) ---\nconst exemptionOpenIds = new Set();\n\nfor (const schedule of specialSchedules) {\n  if (!schedule || !schedule.fields) continue;\n\n  // [关键新增]: 显式验证审批状态\n  const status = schedule.fields.approval_status;\n  // 如果状态存在且不是\"已批准\"，则跳过此条特殊日程（即不豁免）\n  if (status && status !== '已批准') {\n    continue;\n  }\n\n  const personField = schedule.fields.employee_person;\n  \n  // 提取 Open ID\n  if (personField && Array.isArray(personField) && personField[0] && personField[0].id) {\n    exemptionOpenIds.add(personField[0].id);\n  }\n}\n\n// --- 4. 筛选出最终应交日报的员工 ---\nconst employeesWhoShouldSubmit = allEmployees.filter(employee => {\n  if (!employee || !employee.fields) return false;\n\n  // A. 获取当前员工的 Open ID\n  let currentOpenId = null;\n  const openIdField = employee.fields.open_id;\n  \n  // 兼容性提取\n  if (openIdField && Array.isArray(openIdField) && openIdField[0] && openIdField[0].text) {\n    currentOpenId = openIdField[0].text;\n  } else if (typeof openIdField === 'string') {\n    currentOpenId = openIdField;\n  }\n\n  // B. 第一重判断：Open ID 是否在豁免名单中？\n  if (currentOpenId && exemptionOpenIds.has(currentOpenId)) {\n    return false; // 在豁免名单中，跳过\n  }\n\n  // C. 第二重判断：排班规则\n  const shiftTemplate = employee.fields.shift_template;\n  if (!shiftTemplate) return false;\n\n  switch (shiftTemplate) {\n    case '单休':\n      return singleDayOffSchedule.includes(todayDayOfWeek);\n    case '双休':\n      return twoDaysOffSchedule.includes(todayDayOfWeek);\n    default:\n      return false;\n  }\n});\n\n// --- 5. 返回结果 ---\nreturn employeesWhoShouldSubmit;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        0
+      ],
+      "id": "0ec22760-3604-4947-819e-33099be42948",
+      "name": "排班逻辑计算",
+      "alwaysOutputData": true,
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:batchAdd",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblScheduleLogxx",
+        "body": "={{ '{ \"records\": ' + JSON.stringify($('汇总排班结果').item.json.records.map(item => { const today = new Date(); const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()); return { \"fields\": { \"schedule_date\": todayStart.getTime(), \"employee_ref\": [item.record_id], \"employee_person\": [{\"id\": item.fields.open_id[0].text}], \"status\": \"应交\" } }; })) + '}' }}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        0
+      ],
+      "id": "70a8c1c1-e1ae-47b6-8a09-05fc6f06e824",
+      "name": "写入排班记录",
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 将传送带上所有的独立零件，打包进一个大箱子\nconst allItems = $input.all();\n\n// 将这个大箱子作为唯一的物品，返回给下一个节点\nreturn [\n  {\n    json: {\n      \"records\": allItems.map(item => item.json)\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "43206e93-2c92-4fd4-be80-0845a5db2013",
+      "name": "汇总排班结果"
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblConfigxxxxxxx",
+        "body": "{\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"parameter_name\",\n        \"operator\": \"is\",\n        \"value\": [\"ADMIN_OPEN_IDS\"]\n      }\n    ]\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        0
+      ],
+      "id": "50a84b6c-a632-4d62-bd33-f4b9e5e3744a",
+      "name": "查询管理员名单",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- [ WF-01 成功通知卡片构建引擎 v1.0 ] ---\n\n// 1. 获取管理员列表\nconst adminConfigItems = $('查询管理员名单').all();\nif (adminConfigItems.length === 0 || !adminConfigItems[0].json.data.items[0]) {\n  return []; // 如果没有配置管理员，则不发送通知\n}\nconst adminOpenIdsString = adminConfigItems[0].json.data.items[0].fields.parameter_value[0].text;\nconst adminOpenIds = adminOpenIdsString.split(',');\n\n// 2. 准备卡片内容\nconst now = new Date();\nconst formattedTime = now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });\nconst tableLink = \"https://your_tenant_subdomain.feishu.cn/base/QXRxxxxxxxxxxxxxxxxxxxx?table=tblScheduleLogxx&view=vewoE76Uqx\";\n\n// 3. 构建消息卡片\nconst messageCard = {\n  \"config\": { \"wide_screen_mode\": true },\n  \"header\": {\n    \"title\": { \"content\": \"【排班计算成功】\", \"tag\": \"plain_text\" },\n    \"template\": \"green\" // 绿色代表成功\n  },\n  \"elements\": [\n    { // 使用并排的 \"fields\" 元素来显示状态和时间\n      \"tag\": \"div\",\n      \"fields\": [\n        { \"is_short\": true, \"text\": { \"content\": `**执行状态：**\\n✅ 成功`, \"tag\": \"lark_md\" } },\n        { \"is_short\": true, \"text\": { \"content\": `**执行时间：**\\n${formattedTime}`, \"tag\": \"lark_md\" } }\n      ]\n    },\n    { // 显示一段描述文本\n      \"tag\": \"div\",\n      \"text\": { \"content\": \"今日应交日报的员工名单已计算完毕，并成功写入 T4 排班记录表。\", \"tag\": \"lark_md\" }\n    },\n    { \"tag\": \"hr\" }, // 分割线\n    { // 行动按钮\n      \"tag\": \"action\",\n      \"actions\": [\n        {\n          \"tag\": \"button\",\n          \"text\": { \"content\": \"查看今日排班详情\", \"tag\": \"plain_text\" },\n          \"type\": \"primary\",\n          \"url\": tableLink\n        }\n      ]\n    }\n  ]\n};\n\n// 4. 为每一位管理员生成一个待发送任务\nreturn adminOpenIds.map(id => ({\n  json: {\n    receiver_open_id: id.trim(),\n    message_body: messageCard\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1792,
+        0
+      ],
+      "id": "9b4404a1-3211-4efd-99b0-68d9870e8e42",
+      "name": "准备成功通知内容",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "message:send",
+        "receive_id": "={{ $json.receiver_open_id }}",
+        "msg_type": "interactive",
+        "content": "={{ JSON.stringify($json.message_body) }}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        2016,
+        0
+      ],
+      "id": "b7502210-f8a9-457b-9218-f8b0821d45ad",
+      "name": "向管理员发送成功通知",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Schedule Trigger": [
+      {
+        "json": {
+          "timestamp": "2025-11-28T20:00:00.008+08:00",
+          "Readable date": "November 28th 2025, 8:00:00 pm",
+          "Readable time": "8:00:00 pm",
+          "Day of week": "Friday",
+          "Year": "2025",
+          "Month": "November",
+          "Day of month": "28",
+          "Hour": "20",
+          "Minute": "00",
+          "Second": "00",
+          "Timezone": "Asia/Shanghai (UTC+08:00)"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "获取系统配置",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取系统配置": {
+      "main": [
+        [
+          {
+            "node": "查询在职员工",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询在职员工": {
+      "main": [
+        [
+          {
+            "node": "查询当日特殊日程",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询当日特殊日程": {
+      "main": [
+        [
+          {
+            "node": "排班逻辑计算",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "排班逻辑计算": {
+      "main": [
+        [
+          {
+            "node": "汇总排班结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "写入排班记录": {
+      "main": [
+        [
+          {
+            "node": "查询管理员名单",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "汇总排班结果": {
+      "main": [
+        [
+          {
+            "node": "写入排班记录",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询管理员名单": {
+      "main": [
+        [
+          {
+            "node": "准备成功通知内容",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "准备成功通知内容": {
+      "main": [
+        [
+          {
+            "node": "向管理员发送成功通知",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Shanghai",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "1ff6edec-b972-4c4d-87c1-dadd0a3085de",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a34391d7e308dacdc22e6d02a503e04eb0f43b9d0934253b57ca7d984edb83ae"
+  },
+  "id": "WORKFLOW_ID_01_PLACEHOLDER",
+  "tags": []
+}

@@ -1,0 +1,477 @@
+{
+  "name": "[WF-04] 统一提交处理模块",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "WEBHOOK_UUID_PLACEHOLDER_1",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -32,
+        -464
+      ],
+      "id": "67259d5b-009f-45f8-8e49-092386261441",
+      "name": "Webhook",
+      "webhookId": "WEBHOOK_UUID_PLACEHOLDER_1",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. 获取 Webhook 节点传入的 body 数据\nconst body = $('Webhook').item.json.body; \n\n// 2. 将 \"YYYY-MM-DD\" 格式的日期文本转换为毫秒时间戳\n// 我们假设日期是东八区（Asia/Shanghai）的日期\nconst dateString = body.fields.report_date;\nconst shanghaiDate = new Date(dateString + 'T00:00:00+08:00');\nconst timestamp = shanghaiDate.getTime(); \n\n// 3. 创建一个新的、干净的数据对象，用于输出\n// 我们复制所有原始数据，只覆盖需要修改的 report_date 字段\nconst cleanData = {\n  ...body,\n  fields: {\n    ...body.fields,\n    report_date: timestamp\n  }\n}; \n\n// 4. 返回处理干净的数据，给下一个节点使用\nreturn cleanData;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        -464
+      ],
+      "id": "e8f8aff1-e23b-4b29-9cfa-edc3838a8ce3",
+      "name": "转换数据格式",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7481acae-6595-4d5c-8e7a-82ed2e53adb3",
+              "leftValue": "={{ $('转换数据格式').item.json.fields.submission_type }}",
+              "rightValue": "补交",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "ff8eef7c-9753-47d4-80e3-7e1a1de8ea74",
+              "leftValue": "={{ $('转换数据格式').item.json.fields.submission_type }}",
+              "rightValue": "仅说明原因",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1088,
+        -368
+      ],
+      "id": "7619214d-339c-4fa3-b508-a160796d7bb4",
+      "name": "判断提交类型",
+      "retryOnFail": true,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblEmployeexxxxx",
+        "body": "={\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"open_id\",\n        \"operator\": \"is\",\n        \"value\": [\"{{ $('查询员工信息').item.json.data.items[0].fields.open_id[0].text }}\"]\n      }\n    ]\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        -368
+      ],
+      "id": "3932677d-1f0e-40b7-8141-64ee769f057b",
+      "name": "查询员工主记录",
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblMissedLogxxxx",
+        "body": "={\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"employee_ref\",\n        \"operator\": \"contains\",\n        \"value\": [\"{{ $('查询员工主记录').item.json.data.items[0].record_id }}\"]\n      },\n      {\n        \"field_name\": \"missed_date\",\n        \"operator\": \"is\",\n        \"value\": [\"ExactDate\", \"{{ $('判断提交类型').item.json.fields.report_date }}\"]\n      },\n      {\n        \"field_name\": \"status\",\n        \"operator\": \"is\",\n        \"value\": [\"漏写\"]\n      }\n    ]\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1536,
+        -368
+      ],
+      "id": "35cbd477-055e-4f73-9701-bd8458282d7b",
+      "name": "查询漏写记录",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:update",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblMissedLogxxxx",
+        "record_id": "={{ $('查询漏写记录').item.json.data.items[0].record_id }}",
+        "body": "={\n  \"fields\": {\n    \"status\": {{ $('判断提交类型').item.json.fields.submission_type === '补交' ? '\"已补交\"' : '\"已说明原因\"' }},\n    \"resolving_submission_ref\": [\"{{ $('判断提交类型').item.json.record_id }}\"]\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        -368
+      ],
+      "id": "da61c6c5-4439-4790-8058-6f28d75824f1",
+      "name": "更新漏写记录",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "message:send",
+        "receive_id": "={{ $('查询员工信息').item.json.data.items[0].fields.open_id[0].text }}",
+        "content": "={\n  \"text\": \"您于 {{ new Date($('判断提交类型').item.json.fields.report_date).toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' }) }} 的日报漏写记录已处理完毕，状态已更新为【{{ $('更新漏写记录').item.json.data.record.fields.status }}】。感谢您的提交！\"\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1984,
+        -368
+      ],
+      "id": "aff80da6-2486-47ea-8bbb-914b53ac831b",
+      "name": "发送成功确认",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblEmployeexxxxx",
+        "page_size": 1,
+        "body": "={\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"open_id\",\n        \"operator\": \"is\",\n        \"value\": [\"{{ $('获取飞书用户信息').item.json.data.user.open_id }}\"]\n      }\n    ]\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        416,
+        -464
+      ],
+      "id": "ddef04ed-da33-426d-8a0a-163705b07f73",
+      "name": "查询员工信息",
+      "retryOnFail": true,
+      "executeOnce": false,
+      "alwaysOutputData": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "user",
+        "operation": "user:get",
+        "user_id_type": "union_id",
+        "user_id": "={{ $('Webhook').item.json.body.creator_union_id }}",
+        "department_id_type": "department_id"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        192,
+        -464
+      ],
+      "id": "053c03ec-4bd8-4b65-a72d-584ad803f110",
+      "name": "获取飞书用户信息",
+      "alwaysOutputData": true,
+      "executeOnce": false,
+      "retryOnFail": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:update",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblDailyReportxx",
+        "record_id": "={{ $('Webhook').item.json.body.record_id }}",
+        "body": "={\n  \"fields\": {\n    \"employee_ref\": [\"{{ $('查询员工信息').item.json.data.items[0].record_id }}\"]\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        640,
+        -464
+      ],
+      "id": "3c5a2cda-3fb7-499a-89c7-766989a38f0d",
+      "name": "更新 T2 employee_ref",
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblConfigxxxxxxx",
+        "body": "{\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"parameter_name\",\n        \"operator\": \"is\",\n        \"value\": [\"ADMIN_OPEN_IDS\"]\n      }\n    ]\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1088,
+        -560
+      ],
+      "id": "98d88121-a3db-4d55-9029-d835c572bc74",
+      "name": "查询管理员名单",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- [ 消息卡片构建引擎 v3.1 - 类型修正版 ] ---\n\n// 1. 照常获取所有必需的上游数据\nconst submissionData = $('转换数据格式').item.json;\nconst adminConfig = $('查询管理员名单').all();\nconst userInfo = $('获取飞书用户信息').item.json;\n\n// 2. 检查并获取管理员列表\nif (adminConfig.length === 0 || !adminConfig[0].json.data.items[0]) {\n  return [];\n}\nconst adminOpenIdsString = adminConfig[0].json.data.items[0].fields.parameter_value[0].text;\nconst adminOpenIds = adminOpenIdsString.split(',');\n\n// 3. 定义字段ID到中文标题的映射\nconst fieldMap = {\n  work_content: \"本次工作内容\",\n  next_plan: \"下阶段规划\",\n  workload_feeling: \"工作量节奏\",\n  assistance_detail: \"需要协助详情\",\n  makeup_explanation: \"补交/漏写说明\",\n  report_date: \"应交报告日期\"\n};\n\n// 4. 颜色映射器\nconst colorMapper = (field, value) => {\n  let color = \"grey\";\n  if (field === 'submission_type') {\n    switch (value) {\n      case '正常提交': color = 'green'; break;\n      case '补交': color = 'yellow'; break;\n      case '仅说明原因': color = 'orange'; break;\n    }\n  }\n  if (field === 'workload_feeling') {\n    switch (value) {\n      case '尚有余力': color = 'green'; break;\n      case '节奏适中': color = 'blue'; break;\n      case '压力偏大': color = 'orange'; break;\n      case '难以按时完成现有工作': color = 'red'; break;\n    }\n  }\n  return `<font color='${color}'>${value}</font>`;\n};\n\n// 5. 提取核心信息\nconst fields = submissionData.fields;\nconst submitterName = userInfo.data.user.name;\nconst submissionType = fields.submission_type;\n\n// 6. 初始化消息卡片的“元素”数组\nconst cardElements = [];\n\n// 7. 辅助函数\nconst addFieldToCard = (fieldName, isColored = false) => {\n  const value = fields[fieldName];\n  if (value && String(value).trim() !== '') {\n    const title = fieldMap[fieldName];\n    let displayValue = isColored ? colorMapper(fieldName, value) : value;\n    if (fieldName === 'report_date') {\n      displayValue = new Date(value).toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' });\n    }\n    cardElements.push({\n      \"tag\": \"div\",\n      \"text\": { \"content\": `**${title}：**\\n${displayValue}`, \"tag\": \"lark_md\" }\n    });\n    cardElements.push({ \"tag\": \"hr\" });\n  }\n};\n\n// 8. 按顺序构建卡片元素\nconst coloredSubmissionType = colorMapper('submission_type', submissionType);\ncardElements.push({\n  \"tag\": \"div\",\n  \"text\": { \"content\": `**提交类型：** ${coloredSubmissionType}`, \"tag\": \"lark_md\" }\n});\ncardElements.push({ \"tag\": \"hr\" });\n\nif (submissionType === '正常提交') {\n  addFieldToCard('work_content');\n  addFieldToCard('next_plan');\n  addFieldToCard('workload_feeling', true);\n} else {\n  addFieldToCard('report_date');\n  addFieldToCard('makeup_explanation');\n  addFieldToCard('work_content');\n  addFieldToCard('next_plan');\n  addFieldToCard('workload_feeling', true);\n}\n\n// **关键修正**：将严格的布尔值比较 (=== true) 改为字符串比较 (=== 'true')\nif (fields.need_assistance === 'true') {\n  cardElements.push({ \"tag\": \"div\", \"text\": { \"content\": \"**是否需协助：**✅\", \"tag\": \"lark_md\" } });\n  cardElements.push({ \"tag\": \"hr\" });\n  \n  const assistanceDetailValue = fields.assistance_detail;\n  if (assistanceDetailValue && String(assistanceDetailValue).trim() !== '') {\n      cardElements.push({\n      \"tag\": \"div\",\n      \"text\": { \"content\": `**需要协助详情：**\\n${assistanceDetailValue}`, \"tag\": \"lark_md\" }\n    });\n    cardElements.push({ \"tag\": \"hr\" });\n  }\n}\n\n// 9. 组装成最终的飞书消息卡片JSON\nconst messageCard = {\n  \"config\": { \"wide_screen_mode\": true },\n  \"header\": {\n    \"title\": { \"content\": `【日报提交提醒】- ${submitterName}`, \"tag\": \"plain_text\" },\n    \"template\": \"blue\"\n  },\n  \"elements\": cardElements\n};\n\n// 10. 为每一位管理员生成一个待发送任务\nreturn adminOpenIds.map(id => ({\n  json: {\n    receiver_open_id: id.trim(),\n    message_body: messageCard\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        -560
+      ],
+      "id": "f0e3ebb7-f0b8-4eb4-a7ba-a9132de70a69",
+      "name": "准备管理员通知内容",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "message:send",
+        "receive_id": "={{ $json.receiver_open_id }}",
+        "msg_type": "interactive",
+        "content": "={{ JSON.stringify($json.message_body) }}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1536,
+        -560
+      ],
+      "id": "738350d2-5edc-4fe7-ae22-194ac4912a2b",
+      "name": "向管理员发送日报通知",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "获取飞书用户信息",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "转换数据格式": {
+      "main": [
+        [
+          {
+            "node": "查询管理员名单",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "判断提交类型",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "判断提交类型": {
+      "main": [
+        [
+          {
+            "node": "查询员工主记录",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询员工主记录": {
+      "main": [
+        [
+          {
+            "node": "查询漏写记录",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询漏写记录": {
+      "main": [
+        [
+          {
+            "node": "更新漏写记录",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "更新漏写记录": {
+      "main": [
+        [
+          {
+            "node": "发送成功确认",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "发送成功确认": {
+      "main": [
+        []
+      ]
+    },
+    "查询员工信息": {
+      "main": [
+        [
+          {
+            "node": "更新 T2 employee_ref",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取飞书用户信息": {
+      "main": [
+        [
+          {
+            "node": "查询员工信息",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "更新 T2 employee_ref": {
+      "main": [
+        [
+          {
+            "node": "转换数据格式",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询管理员名单": {
+      "main": [
+        [
+          {
+            "node": "准备管理员通知内容",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "准备管理员通知内容": {
+      "main": [
+        [
+          {
+            "node": "向管理员发送日报通知",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "向管理员发送日报通知": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "248b5c81-a011-4cf0-856b-b86a1dc8d494",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a34391d7e308dacdc22e6d02a503e04eb0f43b9d0934253b57ca7d984edb83ae"
+  },
+  "id": "6bp2H9WGko60Xbmk",
+  "tags": []
+}

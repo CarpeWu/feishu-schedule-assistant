@@ -1,0 +1,1055 @@
+{
+  "name": "[WF-04] 统一提交处理模块-event",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7481acae-6595-4d5c-8e7a-82ed2e53adb3",
+              "leftValue": "={{ $('获取 T2 记录详情').item.json.data.records[0].fields.submission_type }}",
+              "rightValue": "补交",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "ff8eef7c-9753-47d4-80e3-7e1a1de8ea74",
+              "leftValue": "={{ $('获取 T2 记录详情').item.json.data.records[0].fields.submission_type }}",
+              "rightValue": "仅说明原因",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        528,
+        -1440
+      ],
+      "id": "ba95eb29-50cf-416c-aa2b-76c86895aaa2",
+      "name": "判断提交类型",
+      "retryOnFail": true,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblMissedLogxxxx",
+        "body": "={\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"employee_ref\",\n        \"operator\": \"contains\",\n        \"value\": [\n          \"{{ $('查询员工信息').first().json.data.items[0].record_id }}\"\n        ]\n      },\n      {\n        \"field_name\": \"missed_date\",\n        \"operator\": \"is\",\n        \"value\": [\n          \"ExactDate\",\n          \"{{ $('获取 T2 记录详情').first().json.data.records[0].fields.report_date }}\"\n        ]\n      },\n      {\n        \"field_name\": \"status\",\n        \"operator\": \"is\",\n        \"value\": [\n          \"漏写\"\n        ]\n      }\n    ]\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        768,
+        -1456
+      ],
+      "id": "f4ba424c-0078-4ffc-8354-856da37fb62c",
+      "name": "查询漏写记录",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:update",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblMissedLogxxxx",
+        "record_id": "={{ $('查询漏写记录').item.json.data.items[0].record_id }}",
+        "body": "={\n  \"fields\": {\n    \"status\": \"{{ $('获取 T2 记录详情').first().json.data.records[0].fields.submission_type === '补交' ? '已补交' : '已说明原因' }}\",\n    \"resolving_submission_ref\": [\n      \"{{ $('获取 T2 记录详情').first().json.data.records[0].record_id }}\"\n    ]\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        960,
+        -1456
+      ],
+      "id": "36f7a8bd-831f-4915-9fd4-1a0bc74539b5",
+      "name": "更新漏写记录",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "message:send",
+        "receive_id": "={{ $json.receiver_open_id }}",
+        "msg_type": "interactive",
+        "content": "={{ JSON.stringify($json.message_body) }}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        -1456
+      ],
+      "id": "8ac929d8-e8cb-4611-9acb-648332dec31e",
+      "name": "发送成功确认",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblEmployeexxxxx",
+        "page_size": 1,
+        "body": "={\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"open_id\",\n        \"operator\": \"is\",\n        \"value\": [\n          \"{{ $('获取 T2 记录详情').item.json.data.records[0].fields.employee_person[0].id }}\"\n        ]\n      }\n    ]\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        -2176
+      ],
+      "id": "75a094e2-8301-4b35-9b7f-8088d3accf8d",
+      "name": "查询员工信息",
+      "retryOnFail": true,
+      "executeOnce": false,
+      "alwaysOutputData": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:update",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblDailyReportxx",
+        "record_id": "={{ $('获取 T2 记录详情').item.json.data.records[0].record_id }}",
+        "body": "={\n  \"fields\": {\n    \"employee_ref\": [\n      \"{{ $('查询员工信息').item.json.data.items[0].record_id }}\"\n    ]\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1376,
+        -2176
+      ],
+      "id": "c1d3db54-8ff0-41cc-a550-63dd60d7ba36",
+      "name": "更新 T2 employee_ref",
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblConfigxxxxxxx",
+        "body": "{\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"parameter_name\",\n        \"operator\": \"is\",\n        \"value\": [\"ADMIN_OPEN_IDS\"]\n      }\n    ]\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        592,
+        -1760
+      ],
+      "id": "1d44f5b2-9ee8-4f56-98e4-b0e7d2e02598",
+      "name": "查询管理员名单",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "message:send",
+        "receive_id": "={{ $json.receiver_open_id }}",
+        "msg_type": "interactive",
+        "content": "={{ JSON.stringify($json.message_body) }}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1024,
+        -1760
+      ],
+      "id": "e69542e0-0a78-401b-adf4-f2185306cbba",
+      "name": "向管理员发送日报通知",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "WEBHOOK_UUID_PLACEHOLDER_2",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -368,
+        -1184
+      ],
+      "id": "9efbdb19-1c70-4f4a-a598-b5cd10ce34d3",
+      "name": "Webhook",
+      "webhookId": "WEBHOOK_UUID_PLACEHOLDER_2"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"challenge\": \"{{ $json.body.challenge }}\"}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -16,
+        -1408
+      ],
+      "id": "d4f41d60-e648-4682-a052-99368a698fac",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "2adc6b0e-1c6c-4230-aea4-aab7db463632",
+              "leftValue": "={{ $json.body.challenge }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -192,
+        -1184
+      ],
+      "id": "a2c7525d-953c-4bbb-b9dd-1c65e8903625",
+      "name": "事件订阅验证"
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:get",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblDailyReportxx",
+        "record_id": "={{ $('Webhook').item.json.body.event.action_list[0].record_id }}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        736,
+        -2160
+      ],
+      "id": "c80c6bb2-29e6-4edf-8815-8535228db141",
+      "name": "获取 T2 记录详情",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# 事件订阅接收与校验",
+        "height": 464,
+        "width": 608
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -416,
+        -1424
+      ],
+      "typeVersion": 1,
+      "id": "bf79b485-0f1d-4df2-a2c7-438804d2b283",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# 数据清洗与关联",
+        "height": 288,
+        "width": 1056,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        480,
+        -2224
+      ],
+      "typeVersion": 1,
+      "id": "a79ba186-de72-4c7e-8d5b-d13c42037637",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "# 漏写判定处理\n",
+        "height": 304,
+        "width": 1072,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        480,
+        -1520
+      ],
+      "typeVersion": 1,
+      "id": "dc7cec02-56ac-418e-952a-36127bf90f25",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "# 通知管理员",
+        "height": 256,
+        "width": 752,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        480,
+        -1856
+      ],
+      "typeVersion": 1,
+      "id": "9c99be6c-435e-45a2-bdd1-c6532243cfc9",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. 获取核心数据：T2日报、员工信息、T1更新结果\nconst t2Data = $('获取 T2 记录详情').first().json.data.records[0];\nconst userInfo = $('获取飞书用户信息').first().json.data.user;\nconst t1Update = $('更新漏写记录').item.json.data.record.fields;\n\n// 2. 提取关键信息\nconst submitterName = userInfo.name;\nconst reportDate = new Date(t2Data.fields.report_date).toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' });\nconst updateStatus = t1Update.status;\n\n// 3. 定义颜色映射（用于卡片模板）\nlet templateColor = \"blue\"; \nswitch(updateStatus) {\n    case '已补交': templateColor = 'green'; break;\n    case '已说明原因': templateColor = 'orange'; break;\n    default: templateColor = 'blue';\n}\n\n// 4. 构建卡片内容\nconst messageCard = {\n    \"config\": {\n        \"wide_screen_mode\": true\n    },\n    \"header\": {\n        \"title\": {\n            \"content\": `✅ 漏写记录处理确认 - ${submitterName}`,\n            \"tag\": \"plain_text\"\n        },\n        \"template\": templateColor\n    },\n    \"elements\": [\n        {\n            \"tag\": \"div\",\n            \"text\": {\n                \"content\": `您提交的日报已成功处理并关联。`,\n                \"tag\": \"lark_md\"\n            }\n        },\n        {\n            \"tag\": \"hr\"\n        },\n        {\n            \"tag\": \"div\",\n            \"fields\": [\n                {\n                    \"is_short\": true,\n                    \"text\": {\n                        \"content\": `**应交日期：**\\n${reportDate}`,\n                        \"tag\": \"lark_md\"\n                    }\n                },\n                {\n                    \"is_short\": true,\n                    \"text\": {\n                        \"content\": `**处理状态：**\\n<font color='${templateColor}'>${updateStatus}</font>`,\n                        \"tag\": \"lark_md\"\n                    }\n                }\n            ],\n            \"tag\": \"div\"\n        },\n        {\n            \"tag\": \"hr\"\n        },\n        {\n            \"tag\": \"note\",\n            \"elements\": [\n                {\n                    \"tag\": \"plain_text\",\n                    \"content\": \"感谢您的及时提交。若状态有误，请联系管理员。\"\n                }\n            ]\n        }\n    ]\n};\n\n// 5. 返回待发送数据\nreturn [{\n    json: {\n        // 收件人 open_id\n        receiver_open_id: userInfo.open_id,\n        // 消息体\n        message_body: messageCard\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        -1456
+      ],
+      "id": "d6c83de8-b01d-471d-99cf-766d692d4f4f",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5602a1df-fbda-422b-9f3e-ce106d372010",
+              "leftValue": "={{ $('Webhook').item.json.body.event.table_id }}",
+              "rightValue": "tblDailyReportxx",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        304,
+        -1728
+      ],
+      "id": "7c35e1e6-4bae-4855-81f4-6bc422469dc8",
+      "name": "是否为 T2 表的提交?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- [ Code: 提取用户 Open ID & Name (v3) ] ---\n\nconst webhookBody = $input.item.json.body;\n\n// 1. 提取 operator_id 信息 (提交者 ID)\nconst operatorId = webhookBody.event.operator_id;\nconst openId = operatorId.open_id;\nconst unionId = operatorId.union_id;\nconst userId = operatorId.user_id;\n\nlet userName = '未知用户'; // 默认值\n\n// 2. 尝试从 action_list 中提取 name\n// 飞书 bitable 事件中，name 通常在 action_list[0].after_value 中 person 字段的 field_identity_value 里\nconst actionList = webhookBody.event.action_list;\nif (actionList && actionList.length > 0) {\n    const firstAction = actionList[0];\n    if (firstAction.after_value && Array.isArray(firstAction.after_value)) {\n        // 查找人员字段 (fldZE4pRyn) \n        const personField = firstAction.after_value.find(field => field.field_id === 'fldZE4pRyn'); // 假设 fldZE4pRyn 是 employee_person 字段 ID\n        \n        if (personField && personField.field_identity_value && personField.field_identity_value.users) {\n            const users = personField.field_identity_value.users;\n            if (users.length > 0 && users[0].name) {\n                userName = users[0].name; // 提取姓名\n            }\n        }\n    }\n}\n\n// 3. 构建输出 Item (模仿 feishuNode:user:get 的输出结构)\nreturn [\n  {\n    json: {\n      // 供后续节点的表达式引用\n      user_open_id: openId,\n      user_union_id: unionId,\n      user_name: userName, \n      \n      // 模仿 feishuNode:user:get 的输出结构，用于兼容下游 Code 节点 (如 '准备管理员通知内容')\n      data: { \n          user: { \n              open_id: openId, \n              union_id: unionId,\n              name: userName \n          } \n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        -2160
+      ],
+      "id": "50b34cc3-cca9-47f6-b82d-0184f4196a35",
+      "name": "提取用户 Open ID"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7fb22e40-1747-447a-999a-e1a51cf33073",
+              "leftValue": "={{ $json.data.records[0].fields.employee_ref.link_record_ids }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        944,
+        -2160
+      ],
+      "id": "8059348e-af81-41f3-9a82-d88a00435073",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- [ 消息卡片构建引擎 v4.0 - 数据流修正版 ] ---\n\n// 1. 照常获取所有必需的上游数据 (使用 first() 确保获取到最新的成功执行结果)\nconst t2RawData = $('获取 T2 记录详情').first().json.data.records[0];\nconst adminConfig = $('查询管理员名单').all();\n// 修正：引用新的 Code 节点来获取用户信息\nconst userInfo = $('提取用户 Open ID').first().json.data.user; \n\n// 2. 检查并获取管理员列表 (逻辑不变)\nif (adminConfig.length === 0 || !adminConfig[0].json.data.items[0]) {\n  return [];\n}\nconst adminOpenIdsString = adminConfig[0].json.data.items[0].fields.parameter_value[0].text;\nconst adminOpenIds = adminOpenIdsString.split(',');\n\n// 3. 定义富文本提取辅助函数\nconst extractPlainText = (richTextField) => {\n    if (!richTextField || !Array.isArray(richTextField)) {\n        return '';\n    }\n    // 飞书富文本数组 [{text: '...', type: 'text'}]\n    return richTextField.map(item => item.text).join('\\n'); \n};\n\n// 4. 定义字段ID到中文标题的映射 (不变)\nconst fieldMap = {\n  work_content: \"本次工作内容\",\n  next_plan: \"下阶段规划\",\n  workload_feeling: \"工作量节奏\",\n  assistance_detail: \"需要协助详情\",\n  makeup_explanation: \"补交/漏写说明\",\n  report_date: \"应交报告日期\"\n};\n\n// 5. 颜色映射器 (不变)\nconst colorMapper = (field, value) => {\n  let color = \"grey\";\n  if (field === 'submission_type') {\n    switch (value) {\n      case '正常提交': color = 'green'; break;\n      case '补交': color = 'yellow'; break;\n      case '仅说明原因': color = 'orange'; break;\n    }\n  }\n  if (field === 'workload_feeling') {\n    switch (value) {\n      case '尚有余力': color = 'green'; break;\n      case '节奏适中': color = 'blue'; break;\n      case '压力偏大': color = 'orange'; break;\n      case '难以按时完成现有工作': color = 'red'; break;\n    }\n  }\n  return `<font color='${color}'>${value}</font>`;\n};\n\n// 6. 提取核心信息并处理富文本\nconst fields = {};\nconst rawFields = t2RawData.fields;\n\n// **核心数据提取与处理**\nfields.work_content = extractPlainText(rawFields.work_content);\nfields.next_plan = extractPlainText(rawFields.next_plan);\nfields.makeup_explanation = extractPlainText(rawFields.makeup_explanation);\nfields.assistance_detail = extractPlainText(rawFields.assistance_detail);\n\n// 非富文本字段可以直接赋值\nfields.submission_type = rawFields.submission_type;\nfields.workload_feeling = rawFields.workload_feeling;\nfields.report_date = rawFields.report_date; // 纯数字时间戳\nfields.need_assistance = rawFields.need_assistance; // 布尔值或 null\n\nconst submitterName = userInfo.name;\nconst submissionType = fields.submission_type;\n\n// 7. 初始化消息卡片的“元素”数组 (不变)\nconst cardElements = [];\n\n// 8. 辅助函数 - 修改为从新的 fields 对象中取值\nconst addFieldToCard = (fieldName, isColored = false) => {\n  const value = fields[fieldName];\n  // 检查值是否为 null, undefined, 或空字符串\n  if (value && String(value).trim() !== '') {\n    const title = fieldMap[fieldName];\n    let displayValue = isColored ? colorMapper(fieldName, value) : value;\n    if (fieldName === 'report_date') {\n      // 日期格式化\n      displayValue = new Date(value).toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' });\n    }\n    cardElements.push({\n      \"tag\": \"div\",\n      \"text\": { \"content\": `**${title}：**\\n${displayValue}`, \"tag\": \"lark_md\" }\n    });\n    cardElements.push({ \"tag\": \"hr\" });\n  }\n};\n\n// 9. 按顺序构建卡片元素 (逻辑不变)\nconst coloredSubmissionType = colorMapper('submission_type', submissionType);\ncardElements.push({\n  \"tag\": \"div\",\n  \"text\": { \"content\": `**提交类型：** ${coloredSubmissionType}`, \"tag\": \"lark_md\" }\n});\ncardElements.push({ \"tag\": \"hr\" });\n\nif (submissionType === '正常提交') {\n  addFieldToCard('work_content');\n  addFieldToCard('next_plan');\n  addFieldToCard('workload_feeling', true);\n} else {\n  addFieldToCard('report_date');\n  addFieldToCard('makeup_explanation');\n  addFieldToCard('work_content');\n  addFieldToCard('next_plan');\n  addFieldToCard('workload_feeling', true);\n}\n\n// 10. 协助需求逻辑 - 修正为检查非空布尔值\nif (fields.need_assistance === true) {\n  cardElements.push({ \"tag\": \"div\", \"text\": { \"content\": \"**是否需协助：**✅\", \"tag\": \"lark_md\" } });\n  cardElements.push({ \"tag\": \"hr\" });\n  \n  addFieldToCard('assistance_detail'); // 协助详情已在 step 6 中提取为纯文本\n}\n\n// 11. 组装成最终的飞书消息卡片JSON (不变)\nconst messageCard = {\n  \"config\": { \"wide_screen_mode\": true },\n  \"header\": {\n    \"title\": { \"content\": `【日报提交】- ${submitterName}`, \"tag\": \"plain_text\" },\n    \"template\": \"blue\"\n  },\n  \"elements\": cardElements\n};\n\n// 12. 为每一位管理员生成一个待发送任务 (不变)\nreturn adminOpenIds.map(id => ({\n  json: {\n    receiver_open_id: id.trim(),\n    message_body: messageCard\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        816,
+        -1760
+      ],
+      "id": "4944851f-7d7b-48e9-96a1-9b0454d2fe86",
+      "name": "准备管理员通知内容",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d9097969-302d-49bf-81bc-049db3d6c185",
+              "leftValue": "={{ $('Webhook').item.json.body.event.table_id }}",
+              "rightValue": "tblEmployeexxxxx",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        256,
+        -832
+      ],
+      "id": "03aa2a2c-c25d-4259-a745-1bf4d29c687c",
+      "name": "是否为 T5 表的提交?"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// 1. 获取 Webhook 传入的事件数据\nconst event = $input.item.json.body.event;\nconst action = event.action_list[0];\nconst afterList = action.after_value; // 变更后的字段列表\nconst beforeList = action.before_value; // 变更前的字段列表\n\n// 2. 在“变更后”列表中，寻找包含 \"users\" 信息的字段 (即人员字段)\nconst personFieldAfter = afterList.find(field => \n  field.field_identity_value && \n  field.field_identity_value.users && \n  field.field_identity_value.users.length > 0\n);\n\n// 如果变更后没人（比如被清空了，或者根本没填），直接跳过\nif (!personFieldAfter) {\n  return { json: { valid_update: false, reason: \"当前未选中员工\" } };\n}\n\n// 3. 【核心逻辑】获取该字段在“变更前”的状态，进行比对\nconst fieldId = personFieldAfter.field_id;\nconst personFieldBefore = beforeList.find(field => field.field_id === fieldId);\n\n// 提取变更后的 User ID\nconst userIdAfter = personFieldAfter.field_identity_value.users[0].user_id.user_id;\n\n// 提取变更前的 User ID (如果之前是空的，或者字段不存在，则设为 null)\nlet userIdBefore = null;\nif (personFieldBefore && \n    personFieldBefore.field_identity_value && \n    personFieldBefore.field_identity_value.users && \n    personFieldBefore.field_identity_value.users.length > 0) {\n    userIdBefore = personFieldBefore.field_identity_value.users[0].user_id.user_id;\n}\n\n// 4. 【差分拦截】只有当 User ID 确实发生变化时，才放行\n// 如果仅仅是改了其他字段，这里会相等，从而返回 valid_update: false\nif (userIdAfter === userIdBefore) {\n    return { \n      json: { \n        valid_update: false, \n        reason: \"人员字段未变更，无需重写\",\n        debug_diff: `Before: ${userIdBefore} -> After: ${userIdAfter}`\n      } \n    };\n}\n\n// 5. 通过校验，返回提取的数据\nconst targetUser = personFieldAfter.field_identity_value.users[0];\nreturn {\n  json: {\n    valid_update: true,\n    target_record_id: action.record_id,\n    target_open_id: targetUser.user_id.open_id,\n    target_user_id: targetUser.user_id.user_id,\n    target_name: targetUser.name\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        -848
+      ],
+      "id": "d8b400ee-67b2-4837-9af0-e48ca44ba71e",
+      "name": "提取变更人员信息"
+    },
+    {
+      "parameters": {
+        "content": "# T2",
+        "height": 1232,
+        "width": 1360,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        256,
+        -2352
+      ],
+      "typeVersion": 1,
+      "id": "16bfec70-e8d5-46e5-9508-d95f59602a85",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "30dd2057-7153-4db3-b53f-ce8c26621a73",
+              "leftValue": "={{ $json.valid_update }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        688,
+        -848
+      ],
+      "id": "4678b7ce-5a40-4b15-b428-db781cdf9157",
+      "name": "校验有效性"
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:update",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "tblEmployeexxxxx",
+        "record_id": "={{ $('提取变更人员信息').item.json.target_record_id }}",
+        "body": "={\n  \"fields\": {\n    \"employee_id\": \"{{ $('提取变更人员信息').item.json.target_user_id }}\",\n    \"open_id\": \"{{ $('提取变更人员信息').item.json.target_open_id }}\"\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        928,
+        -864
+      ],
+      "id": "6f913737-fd0a-4cc5-b8b9-e65160566526",
+      "name": "回写工号与OpenID",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# T5",
+        "height": 240,
+        "width": 848,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        240,
+        -912
+      ],
+      "typeVersion": 1,
+      "id": "26e15ba4-ba16-4999-9b4e-9a1103debbae",
+      "name": "Sticky Note5"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "127.0.0.1:5678",
+            "user-agent": "Go-http-client/1.1",
+            "content-length": "3867",
+            "content-type": "application/json;charset=utf-8",
+            "unit": "eu_nc",
+            "x-lark-request-nonce": "497130872",
+            "x-lark-request-timestamp": "1764044204",
+            "x-lark-signature": "fce112ee2eeffd8af75b5d9daa9d6c6a612eaad8bc821e5b031f1850b26497ed",
+            "x-request-id": "7576511353206164422",
+            "accept-encoding": "gzip",
+            "connection": "Keep-Alive"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "schema": "2.0",
+            "header": {
+              "event_id": "8c9e3274a993f369032f5061b2f3bff0",
+              "token": "VERIFICATION_TOKEN_PLACEHOLDER",
+              "create_time": "1764044203000",
+              "event_type": "drive.file.bitable_record_changed_v1",
+              "tenant_key": "TENANT_KEY_PLACEHOLDER",
+              "app_id": "cli_xxxxxxxxxxxxxxxx"
+            },
+            "event": {
+              "action_list": [
+                {
+                  "action": "record_edited",
+                  "after_value": [
+                    {
+                      "field_id": "fldfy2sHvS",
+                      "field_identity_value": {
+                        "users": [
+                          {
+                            "avatar_url": "AVATAR_URL_PLACEHOLDER",
+                            "en_name": "Employee_Name",
+                            "name": "Employee_Name",
+                            "user_id": {
+                              "open_id": "ou_user_placeholder_1",
+                              "union_id": "on_union_placeholder_1",
+                              "user_id": "user_id_placeholder"
+                            }
+                          }
+                        ]
+                      },
+                      "field_value": "{\"users\":[{\"enName\":\"Employee_Name\",\"notify\":true,\"not_notify\":false,\"userId\":\"numeric_user_id_placeholder\",\"avatarUrl\":\"AVATAR_URL_PLACEHOLDER\",\"name\":\"Employee_Name\"}]}"
+                    },
+                    {
+                      "field_id": "fld5pq379x",
+                      "field_value": ""
+                    },
+                    {
+                      "field_id": "fldzsUxdOW",
+                      "field_value": "[{\"type\":\"text\",\"text\":\"ou_user_placeholder_1\"}]"
+                    },
+                    {
+                      "field_id": "fldzFqr0n9",
+                      "field_value": "optILj7A8h"
+                    },
+                    {
+                      "field_id": "fldbzLQnkn",
+                      "field_value": "[{\"text\":\"\",\"type\":\"text\"}]"
+                    },
+                    {
+                      "field_id": "fldfbdu0G8",
+                      "field_value": ""
+                    },
+                    {
+                      "field_id": "fldkhaEBwg",
+                      "field_value": "[{\"type\":\"text\",\"text\":\"user_id_placeholder\"}]"
+                    },
+                    {
+                      "field_id": "fldxBXgARW",
+                      "field_value": ""
+                    },
+                    {
+                      "field_id": "fldKUtKPt6",
+                      "field_value": "1762513697000"
+                    },
+                    {
+                      "field_id": "fldFCZgdWK",
+                      "field_value": "[\"7570689233683415043\",\"0\"]"
+                    },
+                    {
+                      "field_id": "fldN38ggdz",
+                      "field_value": ""
+                    },
+                    {
+                      "field_id": "fldxkUmcBk",
+                      "field_value": ""
+                    },
+                    {
+                      "field_id": "fldJnQ5X1Z",
+                      "field_value": "optH4MewIK"
+                    }
+                  ],
+                  "before_value": [
+                    {
+                      "field_id": "fldbzLQnkn",
+                      "field_value": "[{\"type\":\"text\",\"text\":\"\"}]"
+                    },
+                    {
+                      "field_id": "fldfy2sHvS",
+                      "field_identity_value": {
+                        "users": [
+                          {
+                            "avatar_url": "AVATAR_URL_PLACEHOLDER",
+                            "en_name": "Employee_Name",
+                            "name": "Employee_Name",
+                            "user_id": {
+                              "open_id": "ou_user_placeholder_1",
+                              "union_id": "on_union_placeholder_1",
+                              "user_id": "user_id_placeholder"
+                            }
+                          }
+                        ]
+                      },
+                      "field_value": "{\"users\":[{\"name\":\"Employee_Name\",\"enName\":\"Employee_Name\",\"notify\":true,\"not_notify\":false,\"userId\":\"numeric_user_id_placeholder\",\"avatarUrl\":\"AVATAR_URL_PLACEHOLDER\"}]}"
+                    },
+                    {
+                      "field_id": "fldxBXgARW",
+                      "field_value": ""
+                    },
+                    {
+                      "field_id": "fldzFqr0n9",
+                      "field_value": "opt89mci9H"
+                    },
+                    {
+                      "field_id": "fldzsUxdOW",
+                      "field_value": "[{\"type\":\"text\",\"text\":\"ou_user_placeholder_1\"}]"
+                    },
+                    {
+                      "field_id": "fldkhaEBwg",
+                      "field_value": "[{\"text\":\"user_id_placeholder\",\"type\":\"text\"}]"
+                    },
+                    {
+                      "field_id": "fldFCZgdWK",
+                      "field_value": "[\"7570689233683415043\",\"0\"]"
+                    },
+                    {
+                      "field_id": "fldxkUmcBk",
+                      "field_value": ""
+                    },
+                    {
+                      "field_id": "fldKUtKPt6",
+                      "field_value": "1762513697000"
+                    },
+                    {
+                      "field_id": "fld5pq379x",
+                      "field_value": ""
+                    },
+                    {
+                      "field_id": "fldN38ggdz",
+                      "field_value": ""
+                    },
+                    {
+                      "field_id": "fldfbdu0G8",
+                      "field_value": ""
+                    },
+                    {
+                      "field_id": "fldJnQ5X1Z",
+                      "field_value": "optH4MewIK"
+                    }
+                  ],
+                  "record_id": "rec_placeholder_1"
+                }
+              ],
+              "file_token": "QXRxxxxxxxxxxxxxxxxxxxx",
+              "file_type": "bitable",
+              "operator_id": {
+                "open_id": "ou_user_placeholder_1",
+                "union_id": "on_union_placeholder_1",
+                "user_id": "user_id_placeholder"
+              },
+              "revision": 310,
+              "subscriber_id_list": [
+                {
+                  "open_id": "ou_user_placeholder_2",
+                  "union_id": "on_union_placeholder_2",
+                  "user_id": ""
+                }
+              ],
+              "table_id": "tblEmployeexxxxx",
+              "update_time": 1764044203
+            }
+          },
+          "webhookUrl": "http://localhost:5678/webhook/WEBHOOK_UUID_PLACEHOLDER_2",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "判断提交类型": {
+      "main": [
+        [
+          {
+            "node": "查询漏写记录",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询漏写记录": {
+      "main": [
+        [
+          {
+            "node": "更新漏写记录",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "更新漏写记录": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "发送成功确认": {
+      "main": [
+        []
+      ]
+    },
+    "查询员工信息": {
+      "main": [
+        [
+          {
+            "node": "更新 T2 employee_ref",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "更新 T2 employee_ref": {
+      "main": [
+        [
+          {
+            "node": "判断提交类型",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "查询管理员名单",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "查询管理员名单": {
+      "main": [
+        [
+          {
+            "node": "准备管理员通知内容",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "向管理员发送日报通知": {
+      "main": [
+        []
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "事件订阅验证",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "事件订阅验证": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "是否为 T2 表的提交?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取 T2 记录详情": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "发送成功确认",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "是否为 T2 表的提交?": {
+      "main": [
+        [
+          {
+            "node": "提取用户 Open ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "是否为 T5 表的提交?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "提取用户 Open ID": {
+      "main": [
+        [
+          {
+            "node": "获取 T2 记录详情",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "查询员工信息",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "准备管理员通知内容": {
+      "main": [
+        [
+          {
+            "node": "向管理员发送日报通知",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "是否为 T5 表的提交?": {
+      "main": [
+        [
+          {
+            "node": "提取变更人员信息",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "提取变更人员信息": {
+      "main": [
+        [
+          {
+            "node": "校验有效性",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "校验有效性": {
+      "main": [
+        [
+          {
+            "node": "回写工号与OpenID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "257fab75-cd55-47a5-903c-929e53730197",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a34391d7e308dacdc22e6d02a503e04eb0f43b9d0934253b57ca7d984edb83ae"
+  },
+  "id": "WORKFLOW_ID_04_PLACEHOLDER",
+  "tags": []
+}
