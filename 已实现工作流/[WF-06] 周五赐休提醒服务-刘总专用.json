@@ -1,5 +1,5 @@
 {
-  "name": "[WF-06] 周五赐休提醒服务-特定负责人专用",
+  "name": "[WF-06] 周五赐休提醒服务-刘总专用",
   "nodes": [
     {
       "parameters": {
@@ -26,7 +26,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// 定义配置常量\nconst TARGET_OPEN_ID = \"ou_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\";\nconst TARGET_URL = \"https://your_tenant_subdomain.feishu.cn/base/QXRxxxxxxxxxxxxxxxxxxxx?table=tblEmployeexxxxx&view=vewsj6ZUCY\";\n\n// 构建飞书卡片对象 (你的结构是完全正确的)\nconst cardObject = {\n  \"config\": {\n    \"wide_screen_mode\": true\n  },\n  \"header\": {\n    \"template\": \"purple\", \n    \"title\": {\n      \"content\": \"🥂 周末赐休提醒\",\n      \"tag\": \"plain_text\"\n    }\n  },\n  \"elements\": [\n    {\n      \"tag\": \"div\",\n      \"text\": {\n        \"content\": \"**刘总~，该赐休了~~~** 🏖️\\n\\n一周工作辛苦啦！请批阅相关事项，然后开启周末模式吧！\",\n        \"tag\": \"lark_md\"\n      }\n    },\n    {\n      \"tag\": \"hr\"\n    },\n    {\n      \"tag\": \"action\",\n      \"actions\": [\n        {\n          \"tag\": \"button\",\n          \"text\": {\n            \"content\": \"👉 前往赐休现场\",\n            \"tag\": \"plain_text\"\n          },\n          \"type\": \"primary\",\n          \"url\": TARGET_URL\n        }\n      ]\n    }\n  ]\n};\n\nreturn {\n  json: {\n    target_open_id: TARGET_OPEN_ID,\n    // 关键修改：在这里加了 JSON.stringify()\n    // 飞书节点要求 content 必须是字符串，而不是对象\n    card_payload: JSON.stringify(cardObject)\n  }\n};"
+        "jsCode": "// 定义配置常量\nconst TARGET_OPEN_ID = \"USER_OPEN_ID_PLACEHOLDER_1\";\nconst TARGET_URL = \"https://example.feishu.cn/base/APP_TOKEN_PLACEHOLDER?table=TABLE_ID_PLACEHOLDER&view=vewsj6ZUCY\";\n\n// 构建飞书卡片对象 (你的结构是完全正确的)\nconst cardObject = {\n  \"config\": {\n    \"wide_screen_mode\": true\n  },\n  \"header\": {\n    \"template\": \"purple\", \n    \"title\": {\n      \"content\": \"🥂 周末赐休提醒\",\n      \"tag\": \"plain_text\"\n    }\n  },\n  \"elements\": [\n    {\n      \"tag\": \"div\",\n      \"text\": {\n        \"content\": \"**刘总~，该赐休了~~~** 🏖️\\n\\n一周工作辛苦啦！请批阅相关事项，然后开启周末模式吧！\",\n        \"tag\": \"lark_md\"\n      }\n    },\n    {\n      \"tag\": \"hr\"\n    },\n    {\n      \"tag\": \"action\",\n      \"actions\": [\n        {\n          \"tag\": \"button\",\n          \"text\": {\n            \"content\": \"👉 前往赐休现场\",\n            \"tag\": \"plain_text\"\n          },\n          \"type\": \"primary\",\n          \"url\": TARGET_URL\n        }\n      ]\n    }\n  ]\n};\n\nreturn {\n  json: {\n    target_open_id: TARGET_OPEN_ID,\n    // 关键修改：在这里加了 JSON.stringify()\n    // 飞书节点要求 content 必须是字符串，而不是对象\n    card_payload: JSON.stringify(cardObject)\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -52,7 +52,7 @@
         0
       ],
       "id": "6c9681d7-08b6-40ac-9a82-ad5c902bce78",
-      "name": "给特定负责人发消息",
+      "name": "给刘总发消息",
       "credentials": {
         "feishuCredentialsApi": {
           "id": "CREDENTIAL_ID_PLACEHOLDER",
@@ -78,7 +78,7 @@
       "main": [
         [
           {
-            "node": "给特定负责人发消息",
+            "node": "给刘总发消息",
             "type": "main",
             "index": 0
           }
@@ -98,6 +98,6 @@
     "templateCredsSetupCompleted": true,
     "instanceId": "a34391d7e308dacdc22e6d02a503e04eb0f43b9d0934253b57ca7d984edb83ae"
   },
-  "id": "WORKFLOW_ID_06_PLACEHOLDER",
+  "id": "ID_PLACEHOLDER",
   "tags": []
 }

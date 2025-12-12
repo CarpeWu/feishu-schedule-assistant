@@ -84,8 +84,8 @@
       "parameters": {
         "resource": "bitable",
         "operation": "bitable:table:record:search",
-        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblEmployeexxxxx",
+        "app_toke": "APP_TOKEN_PLACEHOLDER",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "body": "={\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"open_id\",\n        \"operator\": \"is\",\n        \"value\": [\"{{ $('查询员工信息').item.json.data.items[0].fields.open_id[0].text }}\"]\n      }\n    ]\n  }\n}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
@@ -109,8 +109,8 @@
       "parameters": {
         "resource": "bitable",
         "operation": "bitable:table:record:search",
-        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblMissedLogxxxx",
+        "app_toke": "APP_TOKEN_PLACEHOLDER",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "body": "={\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"employee_ref\",\n        \"operator\": \"contains\",\n        \"value\": [\"{{ $('查询员工主记录').item.json.data.items[0].record_id }}\"]\n      },\n      {\n        \"field_name\": \"missed_date\",\n        \"operator\": \"is\",\n        \"value\": [\"ExactDate\", \"{{ $('判断提交类型').item.json.fields.report_date }}\"]\n      },\n      {\n        \"field_name\": \"status\",\n        \"operator\": \"is\",\n        \"value\": [\"漏写\"]\n      }\n    ]\n  }\n}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
@@ -134,8 +134,8 @@
       "parameters": {
         "resource": "bitable",
         "operation": "bitable:table:record:update",
-        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblMissedLogxxxx",
+        "app_toke": "APP_TOKEN_PLACEHOLDER",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "record_id": "={{ $('查询漏写记录').item.json.data.items[0].record_id }}",
         "body": "={\n  \"fields\": {\n    \"status\": {{ $('判断提交类型').item.json.fields.submission_type === '补交' ? '\"已补交\"' : '\"已说明原因\"' }},\n    \"resolving_submission_ref\": [\"{{ $('判断提交类型').item.json.record_id }}\"]\n  }\n}"
       },
@@ -184,8 +184,8 @@
       "parameters": {
         "resource": "bitable",
         "operation": "bitable:table:record:search",
-        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblEmployeexxxxx",
+        "app_toke": "APP_TOKEN_PLACEHOLDER",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "page_size": 1,
         "body": "={\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"open_id\",\n        \"operator\": \"is\",\n        \"value\": [\"{{ $('获取飞书用户信息').item.json.data.user.open_id }}\"]\n      }\n    ]\n  }\n}"
       },
@@ -237,8 +237,8 @@
       "parameters": {
         "resource": "bitable",
         "operation": "bitable:table:record:update",
-        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblDailyReportxx",
+        "app_toke": "APP_TOKEN_PLACEHOLDER",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "record_id": "={{ $('Webhook').item.json.body.record_id }}",
         "body": "={\n  \"fields\": {\n    \"employee_ref\": [\"{{ $('查询员工信息').item.json.data.items[0].record_id }}\"]\n  }\n}"
       },
@@ -264,8 +264,8 @@
       "parameters": {
         "resource": "bitable",
         "operation": "bitable:table:record:search",
-        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblConfigxxxxxxx",
+        "app_toke": "APP_TOKEN_PLACEHOLDER",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "body": "{\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"parameter_name\",\n        \"operator\": \"is\",\n        \"value\": [\"ADMIN_OPEN_IDS\"]\n      }\n    ]\n  }\n}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
@@ -472,6 +472,6 @@
     "templateCredsSetupCompleted": true,
     "instanceId": "a34391d7e308dacdc22e6d02a503e04eb0f43b9d0934253b57ca7d984edb83ae"
   },
-  "id": "6bp2H9WGko60Xbmk",
+  "id": "ID_PLACEHOLDER",
   "tags": []
 }

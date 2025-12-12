@@ -25,8 +25,8 @@
       "parameters": {
         "resource": "bitable",
         "operation": "bitable:table:record:search",
-        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblConfigxxxxxxx",
+        "app_toke": "APP_TOKEN_PLACEHOLDER",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "body": "={\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"category\",\n        \"operator\": \"is\",\n        \"value\": [\n          \"AI\"\n        ]\n      }\n    ]\n  }\n}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
@@ -170,7 +170,7 @@
       "name": "OpenRouter Chat Model",
       "credentials": {
         "openRouterApi": {
-          "id": "raUxQJwz6WJymv4p",
+          "id": "ID_PLACEHOLDER",
           "name": "YLHP's OpenRouter"
         }
       }
@@ -207,8 +207,8 @@
       "parameters": {
         "resource": "bitable",
         "operation": "bitable:table:record:batchAdd",
-        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblAIAnalysisxxx",
+        "app_toke": "APP_TOKEN_PLACEHOLDER",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "body": "={{ $json.finalPayload }}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
@@ -231,8 +231,8 @@
       "parameters": {
         "resource": "bitable",
         "operation": "bitable:table:record:search",
-        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblConfigxxxxxxx",
+        "app_toke": "APP_TOKEN_PLACEHOLDER",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "body": "{\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"parameter_name\",\n        \"operator\": \"is\",\n        \"value\": [\n          \"ADMIN_OPEN_IDS\"\n        ]\n      }\n    ]\n  }\n}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
@@ -290,7 +290,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// 1. 直接从输入中获取所有需要的信息，因为节点8的输出已包含所有数据\nconst currentData = $input.item.json;\n\n// 2. 提取卡片所需的核心信息\nconst employeeName = currentData.employeeName;\nconst employeeId = currentData.employeeId;\nconst summaryText = currentData.analysis.summary;\nconst insightsText = currentData.analysis.insights;\n\n// 3. 构建飞书消息卡片的JSON结构\nconst messageCard = {\n  \"config\": { \"wide_screen_mode\": true },\n  \"header\": {\n    \"title\": { \"content\": `👋 Hi, ${employeeName}！你的AI周报总结已生成`, \"tag\": \"plain_text\" },\n    \"template\": \"blue\" // 蓝色代表信息与洞察\n  },\n  \"elements\": [\n    {\n      \"tag\": \"div\",\n      \"text\": { \"content\": \"这是AI为你生成的上周工作总结与深度洞察，希望能帮助你更好地复盘与规划。继续加油！\", \"tag\": \"lark_md\" }\n    },\n    { \"tag\": \"hr\" },\n    // 动态展示AI生成的Summary\n    {\n      \"tag\": \"div\",\n      \"text\": { \"content\": summaryText, \"tag\": \"lark_md\" }\n    },\n    { \"tag\": \"hr\" },\n    // 动态展示AI生成的Insights\n    {\n      \"tag\": \"div\",\n      \"text\": { \"content\": insightsText, \"tag\": \"lark_md\" }\n    },\n    { \"tag\": \"hr\" },\n    // 【核心改动】根据您的要求，这里不再有任何按钮，只提供一个温馨的结尾\n    {\n      \"tag\": \"note\",\n      \"elements\": [\n        { \"tag\": \"plain_text\", \"content\": \"本消息由「智能双日报管理系统」自动生成\" }\n      ]\n    }\n  ]\n};\n\n// 4. 返回待发送的任务。n8n会自动为每个员工都生成这样一个任务。\nreturn {\n  receiver_open_id: employeeId,\n  message_body: messageCard\n};"
+        "jsCode": "// 1. 直接从输入中获取所有需要的信息，因为节点8的输出已包含所有数据\nconst currentData = $input.item.json;\n\n// 2. 提取卡片所需的核心信息\nconst employeeName = currentData.employeeName;\nconst employeeId = currentData.employeeId;\nconst summaryText = currentData.analysis.summary;\nconst insightsText = currentData.analysis.insights;\n\n// 3. 构建飞书消息卡片的JSON结构\nconst messageCard = {\n  \"config\": { \"wide_screen_mode\": true },\n  \"header\": {\n    \"title\": { \"content\": `👋 Hi, ${employeeName}！你的AI周报总结已生成`, \"tag\": \"plain_text\" },\n    \"template\": \"blue\" // 蓝色代表信息与洞察\n  },\n  \"elements\": [\n    {\n      \"tag\": \"div\",\n      \"text\": { \"content\": \"这是AI为你生成的上周工作总结与深度洞察，希望能帮助你更好地复盘与规划。继续加油！\", \"tag\": \"lark_md\" }\n    },\n    { \"tag\": \"hr\" },\n    // 动态展示AI生成的Summary\n    {\n      \"tag\": \"div\",\n      \"text\": { \"content\": summaryText, \"tag\": \"lark_md\" }\n    },\n    { \"tag\": \"hr\" },\n    // 动态展示AI生成的Insights\n    {\n      \"tag\": \"div\",\n      \"text\": { \"content\": insightsText, \"tag\": \"lark_md\" }\n    },\n    { \"tag\": \"hr\" },\n    // 【核心改动】根据您的要求，这里不再有任何按钮，只提供一个温馨的结尾\n    {\n      \"tag\": \"note\",\n      \"elements\": [\n        { \"tag\": \"plain_text\", \"content\": \"本消息由「智能日程与效能管理系统」自动生成\" }\n      ]\n    }\n  ]\n};\n\n// 4. 返回待发送的任务。n8n会自动为每个员工都生成这样一个任务。\nreturn {\n  receiver_open_id: employeeId,\n  message_body: messageCard\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -341,8 +341,8 @@
       "parameters": {
         "resource": "bitable",
         "operation": "bitable:table:record:search",
-        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblDailyReportxx",
+        "app_toke": "APP_TOKEN_PLACEHOLDER",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "page_size": 99999999,
         "body": "={\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"report_date\",\n        \"operator\": \"isGreater\",\n        \"value\": [\n          \"ExactDate\",\n          {{ $('计算日期范围').item.json.search_start_time - 1 }}\n        ]\n      },\n      {\n        \"field_name\": \"report_date\",\n        \"operator\": \"isLess\",\n        \"value\": [\n          \"ExactDate\",\n          {{ $('计算日期范围').item.json.search_end_time + 1 }}\n        ]\n      }\n    ]\n  },\n  \"field_names\": [\n    \"employee_person\",\n    \"report_date\",\n    \"work_content\",\n    \"next_plan\",\n    \"workload_feeling\",\n    \"need_assistance\",\n    \"assistance_detail\",\n    \"makeup_explanation\"\n  ],\n  \"automatic_fields\": false\n}"
       },
@@ -554,6 +554,6 @@
     "templateCredsSetupCompleted": true,
     "instanceId": "a34391d7e308dacdc22e6d02a503e04eb0f43b9d0934253b57ca7d984edb83ae"
   },
-  "id": "WORKFLOW_ID_05_PLACEHOLDER",
+  "id": "ID_PLACEHOLDER",
   "tags": []
 }

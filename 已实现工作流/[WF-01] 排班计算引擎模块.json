@@ -27,8 +27,8 @@
       "parameters": {
         "resource": "bitable",
         "operation": "bitable:table:record:search",
-        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblConfigxxxxxxx",
+        "app_toke": "APP_TOKEN_PLACEHOLDER",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "body": "{\n  \"page_size\": 500\n}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
@@ -52,8 +52,8 @@
       "parameters": {
         "resource": "bitable",
         "operation": "bitable:table:record:search",
-        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblEmployeexxxxx",
+        "app_toke": "APP_TOKEN_PLACEHOLDER",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "body": "{\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"status\",\n        \"operator\": \"is\",\n        \"value\": [\"在职\"]\n      }\n    ]\n  },\n  \"page_size\": 500\n}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
@@ -77,8 +77,8 @@
       "parameters": {
         "resource": "bitable",
         "operation": "bitable:table:record:search",
-        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblSpecialSchexx",
+        "app_toke": "APP_TOKEN_PLACEHOLDER",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "body": "{\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"schedule_change_date\",\n        \"operator\": \"is\",\n        \"value\": [\"Today\"]\n      },\n      {\n        \"field_name\": \"approval_status\",\n        \"operator\": \"is\",\n        \"value\": [\"已批准\"]\n      }\n    ]\n  },\n  \"page_size\": 500\n}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
@@ -117,8 +117,8 @@
       "parameters": {
         "resource": "bitable",
         "operation": "bitable:table:record:batchAdd",
-        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblScheduleLogxx",
+        "app_toke": "APP_TOKEN_PLACEHOLDER",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "body": "={{ '{ \"records\": ' + JSON.stringify($('汇总排班结果').item.json.records.map(item => { const today = new Date(); const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()); return { \"fields\": { \"schedule_date\": todayStart.getTime(), \"employee_ref\": [item.record_id], \"employee_person\": [{\"id\": item.fields.open_id[0].text}], \"status\": \"应交\" } }; })) + '}' }}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
@@ -156,8 +156,8 @@
       "parameters": {
         "resource": "bitable",
         "operation": "bitable:table:record:search",
-        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblConfigxxxxxxx",
+        "app_toke": "APP_TOKEN_PLACEHOLDER",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "body": "{\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"parameter_name\",\n        \"operator\": \"is\",\n        \"value\": [\"ADMIN_OPEN_IDS\"]\n      }\n    ]\n  }\n}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
@@ -179,7 +179,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// --- [ WF-01 成功通知卡片构建引擎 v1.0 ] ---\n\n// 1. 获取管理员列表\nconst adminConfigItems = $('查询管理员名单').all();\nif (adminConfigItems.length === 0 || !adminConfigItems[0].json.data.items[0]) {\n  return []; // 如果没有配置管理员，则不发送通知\n}\nconst adminOpenIdsString = adminConfigItems[0].json.data.items[0].fields.parameter_value[0].text;\nconst adminOpenIds = adminOpenIdsString.split(',');\n\n// 2. 准备卡片内容\nconst now = new Date();\nconst formattedTime = now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });\nconst tableLink = \"https://your_tenant_subdomain.feishu.cn/base/QXRxxxxxxxxxxxxxxxxxxxx?table=tblScheduleLogxx&view=vewoE76Uqx\";\n\n// 3. 构建消息卡片\nconst messageCard = {\n  \"config\": { \"wide_screen_mode\": true },\n  \"header\": {\n    \"title\": { \"content\": \"【排班计算成功】\", \"tag\": \"plain_text\" },\n    \"template\": \"green\" // 绿色代表成功\n  },\n  \"elements\": [\n    { // 使用并排的 \"fields\" 元素来显示状态和时间\n      \"tag\": \"div\",\n      \"fields\": [\n        { \"is_short\": true, \"text\": { \"content\": `**执行状态：**\\n✅ 成功`, \"tag\": \"lark_md\" } },\n        { \"is_short\": true, \"text\": { \"content\": `**执行时间：**\\n${formattedTime}`, \"tag\": \"lark_md\" } }\n      ]\n    },\n    { // 显示一段描述文本\n      \"tag\": \"div\",\n      \"text\": { \"content\": \"今日应交日报的员工名单已计算完毕，并成功写入 T4 排班记录表。\", \"tag\": \"lark_md\" }\n    },\n    { \"tag\": \"hr\" }, // 分割线\n    { // 行动按钮\n      \"tag\": \"action\",\n      \"actions\": [\n        {\n          \"tag\": \"button\",\n          \"text\": { \"content\": \"查看今日排班详情\", \"tag\": \"plain_text\" },\n          \"type\": \"primary\",\n          \"url\": tableLink\n        }\n      ]\n    }\n  ]\n};\n\n// 4. 为每一位管理员生成一个待发送任务\nreturn adminOpenIds.map(id => ({\n  json: {\n    receiver_open_id: id.trim(),\n    message_body: messageCard\n  }\n}));"
+        "jsCode": "// --- [ WF-01 成功通知卡片构建引擎 v1.0 ] ---\n\n// 1. 获取管理员列表\nconst adminConfigItems = $('查询管理员名单').all();\nif (adminConfigItems.length === 0 || !adminConfigItems[0].json.data.items[0]) {\n  return []; // 如果没有配置管理员，则不发送通知\n}\nconst adminOpenIdsString = adminConfigItems[0].json.data.items[0].fields.parameter_value[0].text;\nconst adminOpenIds = adminOpenIdsString.split(',');\n\n// 2. 准备卡片内容\nconst now = new Date();\nconst formattedTime = now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });\nconst tableLink = \"https://example.feishu.cn/base/APP_TOKEN_PLACEHOLDER?table=TABLE_ID_PLACEHOLDER&view=vewoE76Uqx\";\n\n// 3. 构建消息卡片\nconst messageCard = {\n  \"config\": { \"wide_screen_mode\": true },\n  \"header\": {\n    \"title\": { \"content\": \"【排班计算成功】\", \"tag\": \"plain_text\" },\n    \"template\": \"green\" // 绿色代表成功\n  },\n  \"elements\": [\n    { // 使用并排的 \"fields\" 元素来显示状态和时间\n      \"tag\": \"div\",\n      \"fields\": [\n        { \"is_short\": true, \"text\": { \"content\": `**执行状态：**\\n✅ 成功`, \"tag\": \"lark_md\" } },\n        { \"is_short\": true, \"text\": { \"content\": `**执行时间：**\\n${formattedTime}`, \"tag\": \"lark_md\" } }\n      ]\n    },\n    { // 显示一段描述文本\n      \"tag\": \"div\",\n      \"text\": { \"content\": \"今日应交日报的员工名单已计算完毕，并成功写入 T4 排班记录表。\", \"tag\": \"lark_md\" }\n    },\n    { \"tag\": \"hr\" }, // 分割线\n    { // 行动按钮\n      \"tag\": \"action\",\n      \"actions\": [\n        {\n          \"tag\": \"button\",\n          \"text\": { \"content\": \"查看今日排班详情\", \"tag\": \"plain_text\" },\n          \"type\": \"primary\",\n          \"url\": tableLink\n        }\n      ]\n    }\n  ]\n};\n\n// 4. 为每一位管理员生成一个待发送任务\nreturn adminOpenIds.map(id => ({\n  json: {\n    receiver_open_id: id.trim(),\n    message_body: messageCard\n  }\n}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -347,6 +347,6 @@
     "templateCredsSetupCompleted": true,
     "instanceId": "a34391d7e308dacdc22e6d02a503e04eb0f43b9d0934253b57ca7d984edb83ae"
   },
-  "id": "WORKFLOW_ID_01_PLACEHOLDER",
+  "id": "ID_PLACEHOLDER",
   "tags": []
 }

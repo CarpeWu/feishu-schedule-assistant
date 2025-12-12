@@ -1,10 +1,10 @@
-# 🤖 智能双日报管理系统 (Feishu Report Automation)
+# 🤖 智能日程与效能管理系统 (Feishu Report Automation)
 
 [![n8n Version](https://img.shields.io/badge/n8n-Latest-orange?logo=n8n)](https://n8n.io/)
 [![Lark/Feishu](https://img.shields.io/badge/Lark%2FFeishu-API%20v3-blue?logo=lark)](https://open.feishu.cn/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-> 一个基于 **n8n** 与 **飞书 (Lark/Feishu)** 深度集成的自动化双日报管理系统。实现从智能排班、定时提醒、漏写统计到 AI 深度分析的全链路闭环。
+> 一个基于 **n8n** 与 **飞书 (Lark/Feishu)** 深度集成的自动化日程与效能管理系统。实现从智能排班、定时提醒、漏写统计到 AI 深度分析的全链路闭环。
 
 ---
 
@@ -49,7 +49,7 @@
 | **WF-03** | **漏写判定与记录** | 每日结算，自动标记漏写状态并通知管理员 | 定时 (次日 08:00) |
 | **WF-04** | **统一提交处理** | 核心网关，实时接收日报提交/补交事件，清洗数据入库 | Webhook (实时) |
 | **WF-05** | **AI 分析服务** | 调用 DeepSeek/LLM 对周报内容进行汇总、情感分析及风险提取 | 定时 (周一 09:00) |
-| **WF-06** | **VIP 专属提醒** | 针对特定高管的定制化提醒策略 | 定时 (周五 19:00) |
+| **WF-06** | **刘总专用提醒** | 针对特定高管的定制化提醒策略 | 定时 (周五 19:00) |
 
 ---
 
@@ -64,7 +64,7 @@
 所有工作流 JSON 文件均位于 `已实现工作流/` 目录下。直接将文件导入 n8n 即可。
 
 ### 3. 配置凭证与参数
-由于项目已进行**隐私脱敏处理**，导入后你需要根据 `上下文启动包/核心知识库文档/智能双日报管理系统 - API配置文档 v1.2.0.md` 中的说明，更新以下信息：
+由于项目已进行**隐私脱敏处理**，导入后你需要根据 `上下文启动包/核心知识库文档/智能日程与效能管理系统 - API配置文档 v1.3.0.md` 中的说明，更新以下信息：
 
 1.  **n8n Credentials**: 配置 `Feishu API` 和 `OpenRouter/OpenAI` 凭证。
 2.  **常量替换**: 检查工作流中的节点，替换 `cli_xxx` (AppID)、`app_token` 等占位符为你自己的真实数据。
@@ -84,8 +84,8 @@
 ```
 
 ## 📅 版本信息
-当前版本：**v1.2.0**
-最后更新：2025-11-29
+当前版本：**v1.3.0**
+最后更新：2025-12-11
 
 ---
 *Built with ❤️ by n8n & Feishu Automation*

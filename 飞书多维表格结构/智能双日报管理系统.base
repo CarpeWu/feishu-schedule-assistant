@@ -1,8 +1,0 @@
-{
-  "gzipSnapshot": "REDACTED_BASE64_GZIP_DATA",
-  "gzipExtraInfo": "REDACTED_BASE64_GZIP_DATA",
-  "gzipBaseRole": "REDACTED_BASE64_GZIP_DATA",
-  "gzipAccessConfig": "REDACTED_BASE64_GZIP_DATA",
-  "gzipAutomation": "REDACTED_BASE64_GZIP_DATA",
-  "sign": "03aeb4fcd3ae3bc122ce093f27361c8e2cb19c5f5"
-}

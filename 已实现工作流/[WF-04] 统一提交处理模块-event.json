@@ -39,7 +39,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        528,
+        944,
         -1440
       ],
       "id": "ba95eb29-50cf-416c-aa2b-76c86895aaa2",
@@ -52,13 +52,13 @@
         "resource": "bitable",
         "operation": "bitable:table:record:search",
         "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblMissedLogxxxx",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "body": "={\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"employee_ref\",\n        \"operator\": \"contains\",\n        \"value\": [\n          \"{{ $('查询员工信息').first().json.data.items[0].record_id }}\"\n        ]\n      },\n      {\n        \"field_name\": \"missed_date\",\n        \"operator\": \"is\",\n        \"value\": [\n          \"ExactDate\",\n          \"{{ $('获取 T2 记录详情').first().json.data.records[0].fields.report_date }}\"\n        ]\n      },\n      {\n        \"field_name\": \"status\",\n        \"operator\": \"is\",\n        \"value\": [\n          \"漏写\"\n        ]\n      }\n    ]\n  }\n}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
       "typeVersion": 1,
       "position": [
-        768,
+        1184,
         -1456
       ],
       "id": "f4ba424c-0078-4ffc-8354-856da37fb62c",
@@ -77,14 +77,14 @@
         "resource": "bitable",
         "operation": "bitable:table:record:update",
         "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblMissedLogxxxx",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "record_id": "={{ $('查询漏写记录').item.json.data.items[0].record_id }}",
         "body": "={\n  \"fields\": {\n    \"status\": \"{{ $('获取 T2 记录详情').first().json.data.records[0].fields.submission_type === '补交' ? '已补交' : '已说明原因' }}\",\n    \"resolving_submission_ref\": [\n      \"{{ $('获取 T2 记录详情').first().json.data.records[0].record_id }}\"\n    ]\n  }\n}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
       "typeVersion": 1,
       "position": [
-        960,
+        1376,
         -1456
       ],
       "id": "36f7a8bd-831f-4915-9fd4-1a0bc74539b5",
@@ -109,7 +109,7 @@
       "type": "n8n-nodes-feishu-lite.feishuNode",
       "typeVersion": 1,
       "position": [
-        1360,
+        1776,
         -1456
       ],
       "id": "8ac929d8-e8cb-4611-9acb-648332dec31e",
@@ -128,14 +128,14 @@
         "resource": "bitable",
         "operation": "bitable:table:record:search",
         "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblEmployeexxxxx",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "page_size": 1,
         "body": "={\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"open_id\",\n        \"operator\": \"is\",\n        \"value\": [\n          \"{{ $('获取 T2 记录详情').item.json.data.records[0].fields.employee_person[0].id }}\"\n        ]\n      }\n    ]\n  }\n}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
       "typeVersion": 1,
       "position": [
-        1152,
+        1568,
         -2176
       ],
       "id": "75a094e2-8301-4b35-9b7f-8088d3accf8d",
@@ -155,14 +155,14 @@
         "resource": "bitable",
         "operation": "bitable:table:record:update",
         "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblDailyReportxx",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "record_id": "={{ $('获取 T2 记录详情').item.json.data.records[0].record_id }}",
         "body": "={\n  \"fields\": {\n    \"employee_ref\": [\n      \"{{ $('查询员工信息').item.json.data.items[0].record_id }}\"\n    ]\n  }\n}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
       "typeVersion": 1,
       "position": [
-        1376,
+        1792,
         -2176
       ],
       "id": "c1d3db54-8ff0-41cc-a550-63dd60d7ba36",
@@ -182,13 +182,13 @@
         "resource": "bitable",
         "operation": "bitable:table:record:search",
         "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblConfigxxxxxxx",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "body": "{\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"parameter_name\",\n        \"operator\": \"is\",\n        \"value\": [\"ADMIN_OPEN_IDS\"]\n      }\n    ]\n  }\n}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
       "typeVersion": 1,
       "position": [
-        592,
+        1008,
         -1760
       ],
       "id": "1d44f5b2-9ee8-4f56-98e4-b0e7d2e02598",
@@ -213,7 +213,7 @@
       "type": "n8n-nodes-feishu-lite.feishuNode",
       "typeVersion": 1,
       "position": [
-        1024,
+        1440,
         -1760
       ],
       "id": "e69542e0-0a78-401b-adf4-f2185306cbba",
@@ -235,8 +235,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -368,
-        -1184
+        -896,
+        -1248
       ],
       "id": "9efbdb19-1c70-4f4a-a598-b5cd10ce34d3",
       "name": "Webhook",
@@ -253,8 +253,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        -16,
-        -1408
+        -560,
+        -1440
       ],
       "id": "d4f41d60-e648-4682-a052-99368a698fac",
       "name": "Respond to Webhook"
@@ -287,8 +287,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -192,
-        -1184
+        -720,
+        -1248
       ],
       "id": "a2c7525d-953c-4bbb-b9dd-1c65e8903625",
       "name": "事件订阅验证"
@@ -298,13 +298,13 @@
         "resource": "bitable",
         "operation": "bitable:table:record:get",
         "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblDailyReportxx",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "record_id": "={{ $('Webhook').item.json.body.event.action_list[0].record_id }}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
       "typeVersion": 1,
       "position": [
-        736,
+        1152,
         -2160
       ],
       "id": "c80c6bb2-29e6-4edf-8815-8535228db141",
@@ -324,8 +324,8 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -416,
-        -1424
+        -944,
+        -1488
       ],
       "typeVersion": 1,
       "id": "bf79b485-0f1d-4df2-a2c7-438804d2b283",
@@ -334,14 +334,14 @@
     {
       "parameters": {
         "content": "# 数据清洗与关联",
-        "height": 288,
-        "width": 1056,
+        "height": 304,
+        "width": 1104,
         "color": 5
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        480,
-        -2224
+        848,
+        -2256
       ],
       "typeVersion": 1,
       "id": "a79ba186-de72-4c7e-8d5b-d13c42037637",
@@ -356,7 +356,7 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        480,
+        880,
         -1520
       ],
       "typeVersion": 1,
@@ -372,7 +372,7 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        480,
+        896,
         -1856
       ],
       "typeVersion": 1,
@@ -386,45 +386,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1136,
+        1552,
         -1456
       ],
       "id": "d6c83de8-b01d-471d-99cf-766d692d4f4f",
       "name": "Code in JavaScript"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "5602a1df-fbda-422b-9f3e-ce106d372010",
-              "leftValue": "={{ $('Webhook').item.json.body.event.table_id }}",
-              "rightValue": "tblDailyReportxx",
-              "operator": {
-                "type": "string",
-                "operation": "equals",
-                "name": "filter.operator.equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        304,
-        -1728
-      ],
-      "id": "7c35e1e6-4bae-4855-81f4-6bc422469dc8",
-      "name": "是否为 T2 表的提交?"
     },
     {
       "parameters": {
@@ -433,7 +399,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        512,
+        928,
         -2160
       ],
       "id": "50b34cc3-cca9-47f6-b82d-0184f4196a35",
@@ -467,7 +433,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        944,
+        1360,
         -2160
       ],
       "id": "8059348e-af81-41f3-9a82-d88a00435073",
@@ -480,7 +446,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        816,
+        1232,
         -1760
       ],
       "id": "4944851f-7d7b-48e9-96a1-9b0454d2fe86",
@@ -490,48 +456,14 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "d9097969-302d-49bf-81bc-049db3d6c185",
-              "leftValue": "={{ $('Webhook').item.json.body.event.table_id }}",
-              "rightValue": "tblEmployeexxxxx",
-              "operator": {
-                "type": "string",
-                "operation": "equals",
-                "name": "filter.operator.equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        256,
-        -832
-      ],
-      "id": "03aa2a2c-c25d-4259-a745-1bf4d29c687c",
-      "name": "是否为 T5 表的提交?"
-    },
-    {
-      "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "// 1. 获取 Webhook 传入的事件数据\nconst event = $input.item.json.body.event;\nconst action = event.action_list[0];\nconst afterList = action.after_value; // 变更后的字段列表\nconst beforeList = action.before_value; // 变更前的字段列表\n\n// 2. 在“变更后”列表中，寻找包含 \"users\" 信息的字段 (即人员字段)\nconst personFieldAfter = afterList.find(field => \n  field.field_identity_value && \n  field.field_identity_value.users && \n  field.field_identity_value.users.length > 0\n);\n\n// 如果变更后没人（比如被清空了，或者根本没填），直接跳过\nif (!personFieldAfter) {\n  return { json: { valid_update: false, reason: \"当前未选中员工\" } };\n}\n\n// 3. 【核心逻辑】获取该字段在“变更前”的状态，进行比对\nconst fieldId = personFieldAfter.field_id;\nconst personFieldBefore = beforeList.find(field => field.field_id === fieldId);\n\n// 提取变更后的 User ID\nconst userIdAfter = personFieldAfter.field_identity_value.users[0].user_id.user_id;\n\n// 提取变更前的 User ID (如果之前是空的，或者字段不存在，则设为 null)\nlet userIdBefore = null;\nif (personFieldBefore && \n    personFieldBefore.field_identity_value && \n    personFieldBefore.field_identity_value.users && \n    personFieldBefore.field_identity_value.users.length > 0) {\n    userIdBefore = personFieldBefore.field_identity_value.users[0].user_id.user_id;\n}\n\n// 4. 【差分拦截】只有当 User ID 确实发生变化时，才放行\n// 如果仅仅是改了其他字段，这里会相等，从而返回 valid_update: false\nif (userIdAfter === userIdBefore) {\n    return { \n      json: { \n        valid_update: false, \n        reason: \"人员字段未变更，无需重写\",\n        debug_diff: `Before: ${userIdBefore} -> After: ${userIdAfter}`\n      } \n    };\n}\n\n// 5. 通过校验，返回提取的数据\nconst targetUser = personFieldAfter.field_identity_value.users[0];\nreturn {\n  json: {\n    valid_update: true,\n    target_record_id: action.record_id,\n    target_open_id: targetUser.user_id.open_id,\n    target_user_id: targetUser.user_id.user_id,\n    target_name: targetUser.name\n  }\n};"
+        "jsCode": "// 1. 获取 Webhook 传入的事件数据\nconst event = $input.item.json.body.event;\n// 获取第一个动作 (通常飞书一次推送包含一个主要动作)\nconst action = event.action_list[0];\n\n// 获取变更后的字段列表\nconst afterList = action.after_value; \n\n// 【修复点】获取变更前的字段列表\n// 对于 'record_added' (新增) 事件，before_value 是 undefined。\n// 我们使用 || [] 将其默认为空数组，防止 .find() 报错。\nconst beforeList = action.before_value || []; \n\n// 2. 在“变更后”列表中，寻找包含 \"users\" 信息的字段 (即人员字段)\n// 注意：这里假设业务上只关注第一个被修改的人员字段\nconst personFieldAfter = afterList.find(field => \n  field.field_identity_value && \n  field.field_identity_value.users && \n  field.field_identity_value.users.length > 0\n);\n\n// 如果变更后没人（比如被清空了，或者根本没填，或者改的是其他非人员字段），直接跳过\nif (!personFieldAfter) {\n  return { json: { valid_update: false, reason: \"当前变更未涉及人员字段或人员为空\" } };\n}\n\n// 3. 【核心逻辑】尝试获取该字段在“变更前”的状态\nconst fieldId = personFieldAfter.field_id;\n// 因为 beforeList 现在保证是数组了，所以这里安全了\nconst personFieldBefore = beforeList.find(field => field.field_id === fieldId);\n\n// 提取变更后的 User ID (新员工的 User ID)\nconst userIdAfter = personFieldAfter.field_identity_value.users[0].user_id.user_id;\n\n// 提取变更前的 User ID \n// 如果是新增记录，或者之前没填人，这里都会是 null\nlet userIdBefore = null;\nif (personFieldBefore && \n    personFieldBefore.field_identity_value && \n    personFieldBefore.field_identity_value.users && \n    personFieldBefore.field_identity_value.users.length > 0) {\n    userIdBefore = personFieldBefore.field_identity_value.users[0].user_id.user_id;\n}\n\n// 4. 【差分拦截】只有当 User ID 确实发生变化时，才放行\n// 新增记录时：userIdAfter (有值) !== userIdBefore (null)，条件成立，放行。\n// 编辑记录且未改人时：两者相等，拦截。\nif (userIdAfter === userIdBefore) {\n    return { \n      json: { \n        valid_update: false, \n        reason: \"人员字段未变更，无需重写\",\n        debug_diff: `Before: ${userIdBefore} -> After: ${userIdAfter}`\n      } \n    };\n}\n\n// 5. 通过校验，返回提取的数据\nconst targetUser = personFieldAfter.field_identity_value.users[0];\nreturn {\n  json: {\n    valid_update: true,\n    target_record_id: action.record_id,\n    target_open_id: targetUser.user_id.open_id,\n    target_user_id: targetUser.user_id.user_id,\n    target_name: targetUser.name\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        480,
-        -848
+        976,
+        -976
       ],
       "id": "d8b400ee-67b2-4837-9af0-e48ca44ba71e",
       "name": "提取变更人员信息"
@@ -545,7 +477,7 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        256,
+        640,
         -2352
       ],
       "typeVersion": 1,
@@ -579,8 +511,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        688,
-        -848
+        1184,
+        -976
       ],
       "id": "4678b7ce-5a40-4b15-b428-db781cdf9157",
       "name": "校验有效性"
@@ -590,15 +522,15 @@
         "resource": "bitable",
         "operation": "bitable:table:record:update",
         "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblEmployeexxxxx",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "record_id": "={{ $('提取变更人员信息').item.json.target_record_id }}",
         "body": "={\n  \"fields\": {\n    \"employee_id\": \"{{ $('提取变更人员信息').item.json.target_user_id }}\",\n    \"open_id\": \"{{ $('提取变更人员信息').item.json.target_open_id }}\"\n  }\n}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
       "typeVersion": 1,
       "position": [
-        928,
-        -864
+        1424,
+        -992
       ],
       "id": "6f913737-fd0a-4cc5-b8b9-e65160566526",
       "name": "回写工号与OpenID",
@@ -618,12 +550,267 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        240,
-        -912
+        784,
+        -1040
       ],
       "typeVersion": 1,
       "id": "26e15ba4-ba16-4999-9b4e-9a1103debbae",
       "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.event.table_id }}",
+                    "rightValue": "TABLE_ID_PLACEHOLDER",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "9a158b5a-265c-4e63-9e44-50c9ab6e6be0"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "T2:日报内容表"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "9a50b810-7687-40cb-b92f-79e625e0c1d5",
+                    "leftValue": "={{ $json.body.event.table_id }}",
+                    "rightValue": "TABLE_ID_PLACEHOLDER",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "T5:员工信息表"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "dc84287a-b022-4566-9bd1-0c1d4b2394b7",
+                    "leftValue": "={{ $json.body.event.table_id }}",
+                    "rightValue": "TABLE_ID_PLACEHOLDER",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "T6:特殊日程表"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -224,
+        -1248
+      ],
+      "id": "92ad4412-3190-41f1-9325-0fd24b6fc3c6",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:get",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "TABLE_ID_PLACEHOLDER",
+        "record_id": "={{ $('Switch').item.json.body.event.action_list[0].record_id }}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        944,
+        -560
+      ],
+      "id": "6621ec11-07ca-4330-b1b0-70f29ef62a79",
+      "name": "获取 T6 记录详情",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "07ef92d9-61e7-4d20-977f-d60f17cbb4aa",
+              "leftValue": "={{ $('获取 T6 记录详情').item.json.data.records[0].fields.approval_status }}",
+              "rightValue": "已批准",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        -560
+      ],
+      "id": "b440f26f-f43e-47c3-9130-f0b63073121d",
+      "name": "判断审批状态",
+      "notes": "是否已批准?"
+    },
+    {
+      "parameters": {
+        "resource": "bitable",
+        "operation": "bitable:table:record:search",
+        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
+        "table_id": "TABLE_ID_PLACEHOLDER",
+        "body": "{\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"parameter_name\",\n        \"operator\": \"is\",\n        \"value\": [\"SPECIAL_SCHEDULE_CC_IDS\"]\n      }\n    ]\n  }\n}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1456,
+        -656
+      ],
+      "id": "6f892914-0f32-472f-91ec-079a385b9612",
+      "name": "获取抄送配置",
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- [ Code: 特殊日程抄送生成器 (v1.3 结构修正版) ] ---\n\n// 1. 获取 T6 数据 (这是触发源，数据是恒定的)\n// 使用 first() 确保获取到最新的 T6 记录字段\nconst t6Record = $('获取 T6 记录详情').first().json.data.records[0].fields;\n\n// 2. 获取 T7 数据 (当前节点的输入)\n// 【关键修正】：飞书 Search 节点的输出包裹在 data.items 中\n// 我们取第一个输入项（API响应），然后提取内部的 items 数组\nconst apiResponse = $input.first().json;\nconst configRecords = apiResponse.data?.items || [];\n\nif (configRecords.length === 0) {\n    // 如果没查到配置记录，直接返回空数组，不发送\n    return [];\n}\n\n// 3. 准备 T6 业务数据 (只需处理一次)\nconst applicantName = t6Record.employee_person?.[0]?.name || \"未知员工\";\nconst scheduleType = t6Record.schedule_type || \"未指定\";\nconst dateTs = t6Record.schedule_change_date;\nconst dateStr = new Date(dateTs).toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' });\nconst reason = t6Record.reason?.[0]?.text || \"无\";\nconst approverName = t6Record.approver_person?.[0]?.name || \"系统自动\";\n\n// 4. 构建通用消息卡片内容\nconst cardContent = {\n  \"config\": { \"wide_screen_mode\": true },\n  \"header\": {\n    \"title\": { \"content\": `📋 特殊日程审批抄送 - ${applicantName}`, \"tag\": \"plain_text\" },\n    \"template\": \"turquoise\"\n  },\n  \"elements\": [\n    {\n      \"tag\": \"div\",\n      \"fields\": [\n        { \"is_short\": true, \"text\": { \"tag\": \"lark_md\", \"content\": `**类型：**\\n${scheduleType}` } },\n        { \"is_short\": true, \"text\": { \"tag\": \"lark_md\", \"content\": `**日期：**\\n${dateStr}` } },\n        { \"is_short\": true, \"text\": { \"tag\": \"lark_md\", \"content\": `**审批人：**\\n${approverName}` } },\n        { \"is_short\": true, \"text\": { \"tag\": \"lark_md\", \"content\": `**申请事由：**\\n${reason}` } }\n      ]\n    },\n    { \"tag\": \"hr\" },\n    { \"tag\": \"note\", \"elements\": [{ \"tag\": \"plain_text\", \"content\": \"此消息为系统自动抄送\" }] }\n  ]\n};\n\n// 5. 处理输入并分裂 (Fan Out)\nconst results = [];\n\n// 遍历查到的配置记录（通常只有1条）\nfor (const record of configRecords) {\n    // 【关键修正】：现在 record 就是 items 数组里的元素，可以直接访问 fields\n    const t7Fields = record.fields;\n    \n    // 安全读取 parameter_value\n    const ccIdsRaw = t7Fields.parameter_value?.[0]?.text || \"\";\n    \n    // 清洗 Open ID 列表\n    const ccIds = ccIdsRaw.split(',').map(id => id.trim()).filter(id => id);\n\n    // 为每个 ID 生成一个新的输出 Item\n    for (const id of ccIds) {\n        results.push({\n            json: {\n                receiver_id: id,\n                msg_type: \"interactive\",\n                content: cardContent\n            }\n        });\n    }\n}\n\n// 6. 返回所有分裂后的任务\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        -656
+      ],
+      "id": "263b435a-1815-4a07-8ed2-3888efccbe3d",
+      "name": "准备抄送通知"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "message:send",
+        "receive_id": "={{ $json.receiver_id }}",
+        "msg_type": "interactive",
+        "content": "={{ JSON.stringify($json.content) }}"
+      },
+      "type": "n8n-nodes-feishu-lite.feishuNode",
+      "typeVersion": 1,
+      "position": [
+        1872,
+        -656
+      ],
+      "id": "b8803b30-0de9-4518-8ccf-179dc485f3f1",
+      "name": "发送抄送通知",
+      "retryOnFail": false,
+      "credentials": {
+        "feishuCredentialsApi": {
+          "id": "CREDENTIAL_ID_PLACEHOLDER",
+          "name": "Feishu Credentials account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- [ Code: 状态变更过滤器 (全局模式版) ] ---\n\nconst TARGET_FIELD_ID = \"fldWrj9ezk\"; // 审批状态字段ID\nconst results = [];\n\n// 遍历所有输入项 (对于 Webhook 触发，通常只有 1 项)\nfor (const item of $input.all()) {\n    const event = item.json.body.event;\n    \n    // 防御性编程：确保 action_list 存在\n    if (!event.action_list || event.action_list.length === 0) continue;\n    \n    const action = event.action_list[0];\n    const afterList = action.after_value;\n    const beforeList = action.before_value;\n\n    // 辅助函数\n    const getFieldValue = (list, fieldId) => {\n        if (!list) return null;\n        const field = list.find(f => f.field_id === fieldId);\n        return field ? field.field_value : null;\n    };\n\n    const valAfter = getFieldValue(afterList, TARGET_FIELD_ID);\n    const valBefore = getFieldValue(beforeList, TARGET_FIELD_ID);\n\n    // 【核心判断】\n    if (valAfter !== valBefore) {\n        // 只有状态变了，才将该 item 加入结果数组\n        results.push({\n            json: {\n                is_status_changed: true,\n                status_val_opt: valAfter,\n                // 透传原始 body，供下游使用\n                body: item.json.body \n            }\n        });\n    }\n    // 如果没变，就不 push，相当于被过滤掉了\n}\n\n// 返回结果数组 (如果是空的，后续流程就会自然停止，且不报错)\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        -560
+      ],
+      "id": "f78a085f-e7b7-4159-a4e2-c3a49b0a49c4",
+      "name": "状态变更过滤器 (T6专用)"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"msg\": \"received\"}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        -480,
+        -1232
+      ],
+      "id": "82282dd8-d865-49f1-bfa2-5c0065d2e843",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "content": "# T6",
+        "height": 368,
+        "width": 1536,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        624,
+        -704
+      ],
+      "typeVersion": 1,
+      "id": "e7fad277-ceef-4798-b85f-96cad36a629d",
+      "name": "Sticky Note6"
     }
   ],
   "pinData": {
@@ -633,13 +820,13 @@
           "headers": {
             "host": "127.0.0.1:5678",
             "user-agent": "Go-http-client/1.1",
-            "content-length": "3867",
+            "content-length": "5164",
             "content-type": "application/json;charset=utf-8",
             "unit": "eu_nc",
-            "x-lark-request-nonce": "497130872",
-            "x-lark-request-timestamp": "1764044204",
-            "x-lark-signature": "fce112ee2eeffd8af75b5d9daa9d6c6a612eaad8bc821e5b031f1850b26497ed",
-            "x-request-id": "7576511353206164422",
+            "x-lark-request-nonce": "211759086",
+            "x-lark-request-timestamp": "1765436578",
+            "x-lark-signature": "92b9fceede772969d6520e1cb1dd9a6563f2d5002ecbdd9fd3bb872d557b873f",
+            "x-request-id": "7582492210715135170",
             "accept-encoding": "gzip",
             "connection": "Keep-Alive"
           },
@@ -648,12 +835,12 @@
           "body": {
             "schema": "2.0",
             "header": {
-              "event_id": "8c9e3274a993f369032f5061b2f3bff0",
+              "event_id": "0b0aa556b0c7c18f617ebd86ccb51736",
               "token": "VERIFICATION_TOKEN_PLACEHOLDER",
-              "create_time": "1764044203000",
+              "create_time": "1765436577000",
               "event_type": "drive.file.bitable_record_changed_v1",
               "tenant_key": "TENANT_KEY_PLACEHOLDER",
-              "app_id": "cli_xxxxxxxxxxxxxxxx"
+              "app_id": "APP_ID_PLACEHOLDER"
             },
             "event": {
               "action_list": [
@@ -661,160 +848,156 @@
                   "action": "record_edited",
                   "after_value": [
                     {
-                      "field_id": "fldfy2sHvS",
+                      "field_id": "fldtzZF8Qz",
+                      "field_value": "1764691200000"
+                    },
+                    {
+                      "field_id": "fldUVf7GnS",
+                      "field_value": "[{\"sequence\":\"5\",\"number\":\"special_schedule_005\"}]"
+                    },
+                    {
+                      "field_id": "fldABHjgbO",
+                      "field_value": "1764726403000"
+                    },
+                    {
+                      "field_id": "fldIWLS5ne",
                       "field_identity_value": {
                         "users": [
                           {
-                            "avatar_url": "AVATAR_URL_PLACEHOLDER",
-                            "en_name": "Employee_Name",
-                            "name": "Employee_Name",
+                            "avatar_url": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00sb_5e7d485e-a94b-442e-807b-1649602b5b5g~?image_size=72x72&cut_type=default-face&quality=&format=jpeg&sticker_format=.webp",
+                            "en_name": "吴家亮",
+                            "name": "吴家亮",
                             "user_id": {
-                              "open_id": "ou_user_placeholder_1",
-                              "union_id": "on_union_placeholder_1",
-                              "user_id": "user_id_placeholder"
+                              "open_id": "USER_OPEN_ID_PLACEHOLDER_2",
+                              "union_id": "on_57be293b37d2494f467fd950b39fa799",
+                              "user_id": "f5b7d8f3"
                             }
                           }
                         ]
                       },
-                      "field_value": "{\"users\":[{\"enName\":\"Employee_Name\",\"notify\":true,\"not_notify\":false,\"userId\":\"numeric_user_id_placeholder\",\"avatarUrl\":\"AVATAR_URL_PLACEHOLDER\",\"name\":\"Employee_Name\"}]}"
+                      "field_value": "{\"users\":[{\"userId\":\"7551306183477084162\",\"avatarUrl\":\"https://s1-imfile.feishucdn.com/static-resource/v1/v3_00sb_5e7d485e-a94b-442e-807b-1649602b5b5g~?image_size=72x72&cut_type=default-face&quality=&format=jpeg&sticker_format=.webp\",\"name\":\"吴家亮\",\"enName\":\"吴家亮\"}]}"
                     },
                     {
-                      "field_id": "fld5pq379x",
+                      "field_id": "fldxboEcpu",
+                      "field_identity_value": {
+                        "users": [
+                          {
+                            "avatar_url": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00m9_5220e04c-f89e-478d-97cd-80a4a84f3a0g~?image_size=72x72&cut_type=default-face&quality=&format=jpeg&sticker_format=.webp",
+                            "en_name": "刘瑞",
+                            "name": "刘瑞",
+                            "user_id": {
+                              "open_id": "USER_OPEN_ID_PLACEHOLDER_1",
+                              "union_id": "on_ceb2d67defe8f85f1a62a78f7cd432b5",
+                              "user_id": "8311297b"
+                            }
+                          }
+                        ]
+                      },
+                      "field_value": "{\"users\":[{\"notify\":false,\"department\":\"研发与交付\",\"isExternal\":false,\"avatarUrl\":\"https://s1-imfile.feishucdn.com/static-resource/v1/v3_00m9_5220e04c-f89e-478d-97cd-80a4a84f3a0g~?image_size=72x72&cut_type=default-face&quality=&format=jpeg&sticker_format=.webp\",\"name\":\"刘瑞\",\"enName\":\"刘瑞\",\"not_notify\":true,\"displayName\":{\"i18n_value\":{\"zh_cn\":\"\",\"en_us\":\"\",\"ja_jp\":\"\"},\"value\":\"刘瑞\"},\"userId\":\"7504242265284837395\"}]}"
+                    },
+                    {
+                      "field_id": "fldWrj9ezk",
+                      "field_value": "opt7pEDfce"
+                    },
+                    {
+                      "field_id": "fldPCMHs1O",
+                      "field_value": "opt0xCaHoT"
+                    },
+                    {
+                      "field_id": "fldTjx2EWU",
+                      "field_value": "[{\"type\":\"text\",\"text\":\"发烧，头疼\"}]"
+                    },
+                    {
+                      "field_id": "fldoX30WEK",
                       "field_value": ""
-                    },
-                    {
-                      "field_id": "fldzsUxdOW",
-                      "field_value": "[{\"type\":\"text\",\"text\":\"ou_user_placeholder_1\"}]"
-                    },
-                    {
-                      "field_id": "fldzFqr0n9",
-                      "field_value": "optILj7A8h"
-                    },
-                    {
-                      "field_id": "fldbzLQnkn",
-                      "field_value": "[{\"text\":\"\",\"type\":\"text\"}]"
-                    },
-                    {
-                      "field_id": "fldfbdu0G8",
-                      "field_value": ""
-                    },
-                    {
-                      "field_id": "fldkhaEBwg",
-                      "field_value": "[{\"type\":\"text\",\"text\":\"user_id_placeholder\"}]"
-                    },
-                    {
-                      "field_id": "fldxBXgARW",
-                      "field_value": ""
-                    },
-                    {
-                      "field_id": "fldKUtKPt6",
-                      "field_value": "1762513697000"
-                    },
-                    {
-                      "field_id": "fldFCZgdWK",
-                      "field_value": "[\"7570689233683415043\",\"0\"]"
-                    },
-                    {
-                      "field_id": "fldN38ggdz",
-                      "field_value": ""
-                    },
-                    {
-                      "field_id": "fldxkUmcBk",
-                      "field_value": ""
-                    },
-                    {
-                      "field_id": "fldJnQ5X1Z",
-                      "field_value": "optH4MewIK"
                     }
                   ],
                   "before_value": [
                     {
-                      "field_id": "fldbzLQnkn",
-                      "field_value": "[{\"type\":\"text\",\"text\":\"\"}]"
+                      "field_id": "fldWrj9ezk",
+                      "field_value": "opt7pEDfce"
                     },
                     {
-                      "field_id": "fldfy2sHvS",
+                      "field_id": "fldoX30WEK",
+                      "field_value": ""
+                    },
+                    {
+                      "field_id": "fldABHjgbO",
+                      "field_value": "1764726403000"
+                    },
+                    {
+                      "field_id": "fldIWLS5ne",
                       "field_identity_value": {
                         "users": [
                           {
-                            "avatar_url": "AVATAR_URL_PLACEHOLDER",
-                            "en_name": "Employee_Name",
-                            "name": "Employee_Name",
+                            "avatar_url": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00sb_5e7d485e-a94b-442e-807b-1649602b5b5g~?image_size=72x72&cut_type=default-face&quality=&format=jpeg&sticker_format=.webp",
+                            "en_name": "吴家亮",
+                            "name": "吴家亮",
                             "user_id": {
-                              "open_id": "ou_user_placeholder_1",
-                              "union_id": "on_union_placeholder_1",
-                              "user_id": "user_id_placeholder"
+                              "open_id": "USER_OPEN_ID_PLACEHOLDER_2",
+                              "union_id": "on_57be293b37d2494f467fd950b39fa799",
+                              "user_id": "f5b7d8f3"
                             }
                           }
                         ]
                       },
-                      "field_value": "{\"users\":[{\"name\":\"Employee_Name\",\"enName\":\"Employee_Name\",\"notify\":true,\"not_notify\":false,\"userId\":\"numeric_user_id_placeholder\",\"avatarUrl\":\"AVATAR_URL_PLACEHOLDER\"}]}"
+                      "field_value": "{\"users\":[{\"userId\":\"7551306183477084162\",\"avatarUrl\":\"https://s1-imfile.feishucdn.com/static-resource/v1/v3_00sb_5e7d485e-a94b-442e-807b-1649602b5b5g~?image_size=72x72&cut_type=default-face&quality=&format=jpeg&sticker_format=.webp\",\"name\":\"吴家亮\",\"enName\":\"吴家亮\"}]}"
                     },
                     {
-                      "field_id": "fldxBXgARW",
-                      "field_value": ""
+                      "field_id": "fldTjx2EWU",
+                      "field_value": "[{\"text\":\"发烧，头疼.\",\"type\":\"text\"}]"
                     },
                     {
-                      "field_id": "fldzFqr0n9",
-                      "field_value": "opt89mci9H"
+                      "field_id": "fldtzZF8Qz",
+                      "field_value": "1764691200000"
                     },
                     {
-                      "field_id": "fldzsUxdOW",
-                      "field_value": "[{\"type\":\"text\",\"text\":\"ou_user_placeholder_1\"}]"
+                      "field_id": "fldUVf7GnS",
+                      "field_value": "[{\"sequence\":\"5\",\"number\":\"special_schedule_005\"}]"
                     },
                     {
-                      "field_id": "fldkhaEBwg",
-                      "field_value": "[{\"text\":\"user_id_placeholder\",\"type\":\"text\"}]"
+                      "field_id": "fldxboEcpu",
+                      "field_identity_value": {
+                        "users": [
+                          {
+                            "avatar_url": "https://s1-imfile.feishucdn.com/static-resource/v1/v3_00m9_5220e04c-f89e-478d-97cd-80a4a84f3a0g~?image_size=72x72&cut_type=default-face&quality=&format=jpeg&sticker_format=.webp",
+                            "en_name": "刘瑞",
+                            "name": "刘瑞",
+                            "user_id": {
+                              "open_id": "USER_OPEN_ID_PLACEHOLDER_1",
+                              "union_id": "on_ceb2d67defe8f85f1a62a78f7cd432b5",
+                              "user_id": "8311297b"
+                            }
+                          }
+                        ]
+                      },
+                      "field_value": "{\"users\":[{\"avatarUrl\":\"https://s1-imfile.feishucdn.com/static-resource/v1/v3_00m9_5220e04c-f89e-478d-97cd-80a4a84f3a0g~?image_size=72x72&cut_type=default-face&quality=&format=jpeg&sticker_format=.webp\",\"notify\":false,\"displayName\":{\"i18n_value\":{\"en_us\":\"\",\"ja_jp\":\"\",\"zh_cn\":\"\"},\"value\":\"刘瑞\"},\"not_notify\":true,\"department\":\"研发与交付\",\"userId\":\"7504242265284837395\",\"name\":\"刘瑞\",\"enName\":\"刘瑞\",\"isExternal\":false}]}"
                     },
                     {
-                      "field_id": "fldFCZgdWK",
-                      "field_value": "[\"7570689233683415043\",\"0\"]"
-                    },
-                    {
-                      "field_id": "fldxkUmcBk",
-                      "field_value": ""
-                    },
-                    {
-                      "field_id": "fldKUtKPt6",
-                      "field_value": "1762513697000"
-                    },
-                    {
-                      "field_id": "fld5pq379x",
-                      "field_value": ""
-                    },
-                    {
-                      "field_id": "fldN38ggdz",
-                      "field_value": ""
-                    },
-                    {
-                      "field_id": "fldfbdu0G8",
-                      "field_value": ""
-                    },
-                    {
-                      "field_id": "fldJnQ5X1Z",
-                      "field_value": "optH4MewIK"
+                      "field_id": "fldPCMHs1O",
+                      "field_value": "opt0xCaHoT"
                     }
                   ],
-                  "record_id": "rec_placeholder_1"
+                  "record_id": "recVzI8cBp"
                 }
               ],
               "file_token": "QXRxxxxxxxxxxxxxxxxxxxx",
               "file_type": "bitable",
               "operator_id": {
-                "open_id": "ou_user_placeholder_1",
-                "union_id": "on_union_placeholder_1",
-                "user_id": "user_id_placeholder"
+                "open_id": "USER_OPEN_ID_PLACEHOLDER_2",
+                "union_id": "on_57be293b37d2494f467fd950b39fa799",
+                "user_id": "f5b7d8f3"
               },
-              "revision": 310,
+              "revision": 213,
               "subscriber_id_list": [
                 {
-                  "open_id": "ou_user_placeholder_2",
-                  "union_id": "on_union_placeholder_2",
+                  "open_id": "USER_OPEN_ID_PLACEHOLDER_3",
+                  "union_id": "on_f5ea92e327c5ac6682711315522c246f",
                   "user_id": ""
                 }
               ],
-              "table_id": "tblEmployeexxxxx",
-              "update_time": 1764044203
+              "table_id": "TABLE_ID_PLACEHOLDER",
+              "update_time": 1765436577
             }
           },
           "webhookUrl": "http://localhost:5678/webhook/WEBHOOK_UUID_PLACEHOLDER_2",
@@ -927,7 +1110,7 @@
         ],
         [
           {
-            "node": "是否为 T2 表的提交?",
+            "node": "Respond to Webhook1",
             "type": "main",
             "index": 0
           }
@@ -950,24 +1133,6 @@
         [
           {
             "node": "发送成功确认",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "是否为 T2 表的提交?": {
-      "main": [
-        [
-          {
-            "node": "提取用户 Open ID",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "是否为 T5 表的提交?",
             "type": "main",
             "index": 0
           }
@@ -1007,17 +1172,6 @@
         ]
       ]
     },
-    "是否为 T5 表的提交?": {
-      "main": [
-        [
-          {
-            "node": "提取变更人员信息",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "提取变更人员信息": {
       "main": [
         [
@@ -1039,17 +1193,108 @@
           }
         ]
       ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "提取用户 Open ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "提取变更人员信息",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "状态变更过滤器 (T6专用)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取 T6 记录详情": {
+      "main": [
+        [
+          {
+            "node": "判断审批状态",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "判断审批状态": {
+      "main": [
+        [
+          {
+            "node": "获取抄送配置",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "获取抄送配置": {
+      "main": [
+        [
+          {
+            "node": "准备抄送通知",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "准备抄送通知": {
+      "main": [
+        [
+          {
+            "node": "发送抄送通知",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "状态变更过滤器 (T6专用)": {
+      "main": [
+        [
+          {
+            "node": "获取 T6 记录详情",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "257fab75-cd55-47a5-903c-929e53730197",
+  "versionId": "ab098031-cfac-4530-961c-a947dff7a47c",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "a34391d7e308dacdc22e6d02a503e04eb0f43b9d0934253b57ca7d984edb83ae"
   },
-  "id": "WORKFLOW_ID_04_PLACEHOLDER",
+  "id": "ID_PLACEHOLDER",
   "tags": []
 }

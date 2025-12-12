@@ -32,8 +32,8 @@
       "parameters": {
         "resource": "bitable",
         "operation": "bitable:table:record:search",
-        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblScheduleLogxx",
+        "app_toke": "APP_TOKEN_PLACEHOLDER",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "body": "{\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"schedule_date\",\n        \"operator\": \"is\",\n        \"value\": [\"Today\"]\n      },\n      {\n        \"field_name\": \"status\",\n        \"operator\": \"is\",\n        \"value\": [\"应交\"]\n      }\n    ]\n  },\n  \"page_size\": 500\n}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
@@ -57,8 +57,8 @@
       "parameters": {
         "resource": "bitable",
         "operation": "bitable:table:record:search",
-        "app_toke": "QXRxxxxxxxxxxxxxxxxxxxx",
-        "table_id": "tblDailyReportxx",
+        "app_toke": "APP_TOKEN_PLACEHOLDER",
+        "table_id": "TABLE_ID_PLACEHOLDER",
         "body": "{\n  \"filter\": {\n    \"conjunction\": \"and\",\n    \"conditions\": [\n      {\n        \"field_name\": \"report_date\",\n        \"operator\": \"is\",\n        \"value\": [\"Today\"]\n      }\n    ]\n  },\n  \"page_size\": 500\n}"
       },
       "type": "n8n-nodes-feishu-lite.feishuNode",
@@ -128,7 +128,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// --- [ WF-02 员工提醒卡片构建引擎 v2.1 - 最终确认版 ] ---\n\n// 1. 获取所有待提醒的员工列表\nconst employeesToRemindRaw = $input.all();\nconst results = [];\n\n// 2. **智能防重**：确保每位员工只会被处理一次\nconst uniqueEmployees = new Map();\nfor (const item of employeesToRemindRaw) {\n  // **关键**：从 employee_person 字段获取ID\n  const employeeOpenId = item.json.fields.employee_person[0].id;\n  \n  if (employeeOpenId) { // 确保ID存在\n    // **关键**：在使用ID前，先用 .trim() 进行净化，移除所有不可见的空白和换行符\n    const cleanOpenId = employeeOpenId.trim(); \n    \n    if (!uniqueEmployees.has(cleanOpenId)) {\n      uniqueEmployees.set(cleanOpenId, item.json);\n    }\n  }\n}\n\n// 3. 遍历去重后的员工列表\nfor (const [employeeOpenId, employeeData] of uniqueEmployees.entries()) {\n\n  // 4. 提取所需信息\n  const employeeName = employeeData.fields.employee_person[0].name;\n  const formLink = \"https://your_tenant_subdomain.feishu.cn/share/base/form/FORM_SHARE_TOKEN_PLACEHOLDER_1?prefill_%E6%8F%90%E4%BA%A4%E7%B1%BB%E5%9E%8B=%E6%AD%A3%E5%B8%B8%E6%8F%90%E4%BA%A4&hide_%E6%8F%90%E4%BA%A4%E7%B1%BB%E5%9E%8B=1\";\n\n  // 5. 构建消息卡片\n  const messageCard = {\n    \"config\": { \"wide_screen_mode\": true },\n    \"header\": { \"title\": { \"content\": \"【今日日报提醒】\", \"tag\": \"plain_text\" }, \"template\": \"blue\" },\n    \"elements\": [\n      { \"tag\": \"div\", \"text\": { \"content\": `您好，**${employeeName}**。\\n温馨提醒，今天的日报还没有填写哦~`, \"tag\": \"lark_md\" } },\n      { \"tag\": \"action\", \"actions\": [ { \"tag\": \"button\", \"text\": { \"content\": \"✍️ 立即填写日报\", \"tag\": \"plain_text\" }, \"type\": \"primary\", \"url\": formLink } ] }\n    ]\n  };\n\n  // 6. 将结果存入待办列表\n  results.push({\n    json: {\n      receiver_open_id: employeeOpenId, // 这里使用的是已经净化过的 cleanOpenId\n      message_body: messageCard\n    }\n  });\n}\n\n// 7. 返回所有待发送的任务\nreturn results;"
+        "jsCode": "// --- [ WF-02 员工提醒卡片构建引擎 v2.1 - 最终确认版 ] ---\n\n// 1. 获取所有待提醒的员工列表\nconst employeesToRemindRaw = $input.all();\nconst results = [];\n\n// 2. **智能防重**：确保每位员工只会被处理一次\nconst uniqueEmployees = new Map();\nfor (const item of employeesToRemindRaw) {\n  // **关键**：从 employee_person 字段获取ID\n  const employeeOpenId = item.json.fields.employee_person[0].id;\n  \n  if (employeeOpenId) { // 确保ID存在\n    // **关键**：在使用ID前，先用 .trim() 进行净化，移除所有不可见的空白和换行符\n    const cleanOpenId = employeeOpenId.trim(); \n    \n    if (!uniqueEmployees.has(cleanOpenId)) {\n      uniqueEmployees.set(cleanOpenId, item.json);\n    }\n  }\n}\n\n// 3. 遍历去重后的员工列表\nfor (const [employeeOpenId, employeeData] of uniqueEmployees.entries()) {\n\n  // 4. 提取所需信息\n  const employeeName = employeeData.fields.employee_person[0].name;\n  const formLink = \"https://example.feishu.cn/share/base/form/shrcnB4DSdVLTh6oBCoESZhgxuW?prefill_%E6%8F%90%E4%BA%A4%E7%B1%BB%E5%9E%8B=%E6%AD%A3%E5%B8%B8%E6%8F%90%E4%BA%A4&hide_%E6%8F%90%E4%BA%A4%E7%B1%BB%E5%9E%8B=1\";\n\n  // 5. 构建消息卡片\n  const messageCard = {\n    \"config\": { \"wide_screen_mode\": true },\n    \"header\": { \"title\": { \"content\": \"【今日日报提醒】\", \"tag\": \"plain_text\" }, \"template\": \"blue\" },\n    \"elements\": [\n      { \"tag\": \"div\", \"text\": { \"content\": `您好，**${employeeName}**。\\n温馨提醒，今天的日报还没有填写哦~`, \"tag\": \"lark_md\" } },\n      { \"tag\": \"action\", \"actions\": [ { \"tag\": \"button\", \"text\": { \"content\": \"✍️ 立即填写日报\", \"tag\": \"plain_text\" }, \"type\": \"primary\", \"url\": formLink } ] }\n    ]\n  };\n\n  // 6. 将结果存入待办列表\n  results.push({\n    json: {\n      receiver_open_id: employeeOpenId, // 这里使用的是已经净化过的 cleanOpenId\n      message_body: messageCard\n    }\n  });\n}\n\n// 7. 返回所有待发送的任务\nreturn results;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -245,6 +245,6 @@
     "templateCredsSetupCompleted": true,
     "instanceId": "a34391d7e308dacdc22e6d02a503e04eb0f43b9d0934253b57ca7d984edb83ae"
   },
-  "id": "WORKFLOW_ID_02_PLACEHOLDER",
+  "id": "ID_PLACEHOLDER",
   "tags": []
 }
